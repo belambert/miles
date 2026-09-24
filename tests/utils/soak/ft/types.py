@@ -53,6 +53,20 @@ class PodDetails(FrozenStrictBaseModel):
     pod: SoakPodTarget
 
 
+class ResizeStep(FrozenStrictBaseModel):
+    at_rollout: int
+    replicas: int
+
+
+def compute_sizes(*, initial_replicas: int, schedule: tuple[ResizeStep, ...]) -> list[int]:
+    return [initial_replicas, *(step.replicas for step in schedule)]
+
+
+class ResizeDetails(FrozenStrictBaseModel):
+    form: Literal["resize"] = "resize"
+    step: ResizeStep
+
+
 class ObservedCellFaultKind(StrEnum):
     MISSING = "missing"
     REPLACED = "replaced"
@@ -66,3 +80,7 @@ class ObservedCellFault(FrozenStrictBaseModel):
     action: FaultAction
     observed: ObservedCellFaultKind
     observed_workers_hash: str | None = None
+
+
+class PoolResizedEvidence(FrozenStrictBaseModel):
+    kind: Literal["pool_resized"] = "pool_resized"
