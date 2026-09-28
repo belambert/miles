@@ -14,13 +14,17 @@ from miles.utils.async_utils import Disposer, eager_create_task, with_disposer
 from miles.utils.data import remove_rollout_data_refs, remove_train_output_refs
 from miles.utils.ft_utils.mini_ft_controller import maybe_start_mini_ft_controller
 from miles.utils.misc import should_run_periodic_action
-from miles.utils.orchestration_utils import ArgvOrchestratorStartupInfo, init_orchestration_script, parse_orchestrator_startup_info
+from miles.utils.orchestration_utils import (
+    OrchestratorStartupInfo,
+    init_orchestration_script,
+    parse_orchestrator_startup_info,
+)
 
 logger = logging.getLogger(__name__)
 
 
 # The framework supports other asynchronous approaches such as fully async (see miles/rollout/fully_async_rollout.py).
-async def train(startup_info: ArgvOrchestratorStartupInfo, *, disposer: Disposer):
+async def train(startup_info: OrchestratorStartupInfo, *, disposer: Disposer):
     args = startup_info.args
     assert not args.colocate or args.fully_async, "Colocation is only supported for async training with --fully-async."
     validate_async_off_policy_correction(args)

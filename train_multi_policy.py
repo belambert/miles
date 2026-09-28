@@ -21,13 +21,17 @@ from miles.utils.multi_policy.utils import (
     define_policy_metric_groups,
     validate_multi_policy_args,
 )
-from miles.utils.orchestration_utils import ArgvOrchestratorStartupInfo, init_orchestration_script, parse_orchestrator_startup_info
+from miles.utils.orchestration_utils import (
+    OrchestratorStartupInfo,
+    init_orchestration_script,
+    parse_orchestrator_startup_info,
+)
 from miles.utils.workers.worker_handle import BaseWorkerHandle
 
 logger = logging.getLogger(__name__)
 
 
-async def train_multi_policy(startup_info: ArgvOrchestratorStartupInfo, *, disposer: Disposer) -> None:
+async def train_multi_policy(startup_info: OrchestratorStartupInfo, *, disposer: Disposer) -> None:
     args = startup_info.args
     megatron_config = args.raw_megatron
     validate_multi_policy_args(args, megatron_config=megatron_config)

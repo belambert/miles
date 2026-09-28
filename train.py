@@ -16,12 +16,16 @@ from miles.utils.data import remove_rollout_data_refs, remove_train_output_refs
 from miles.utils.ft_utils.mini_ft_controller import maybe_start_mini_ft_controller
 from miles.utils.lora.utils import lora_rollout_enabled
 from miles.utils.misc import should_run_periodic_action
-from miles.utils.orchestration_utils import ArgvOrchestratorStartupInfo, init_orchestration_script, parse_orchestrator_startup_info
+from miles.utils.orchestration_utils import (
+    OrchestratorStartupInfo,
+    init_orchestration_script,
+    parse_orchestrator_startup_info,
+)
 
 logger = logging.getLogger(__name__)
 
 
-async def train(startup_info: ArgvOrchestratorStartupInfo, *, disposer: Disposer):
+async def train(startup_info: OrchestratorStartupInfo, *, disposer: Disposer):
     args = startup_info.args
     assert not args.fully_async, "--fully-async requires the async driver: run train_async.py"
     capability = init_orchestration_script(startup_info, disposer=disposer)
