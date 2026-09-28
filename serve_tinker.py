@@ -8,13 +8,13 @@ from miles.ray.placement_group import create_trainer_handles
 from miles.ray.rollout.router_manager import resolve_router_addrs
 from miles.ray.specs.inference import compute_router_providers, create_inference_controller_handle
 from miles.ray.specs.train import ACTOR_ROLE, compute_trainer_configs
+from miles.ray.train.init_request import TrainerControllerInitRequest
 from miles.ray.wiring import get_backend_capability
 from miles.tinker.arguments import configure_tinker_args
 from miles.tinker.core.service import TinkerService
 from miles.tinker.core.types import GatewayConfig
 from miles.tinker.runtime import MilesBackend
 from miles.tinker.server.app import build_app
-from miles.utils.args.trainer_utils import compute_trainer_config
 from miles.utils.arguments import parse_args
 from miles.utils.async_utils import Disposer, with_disposer
 from miles.utils.hf_utils.config import load_hf_config
@@ -54,7 +54,7 @@ async def serve(args, *, disposer: Disposer):
     trainer_configs = compute_trainer_configs(args)
     [actor_config] = [config for config in trainer_configs if config.role == ACTOR_ROLE]
     trainer = create_trainer_handles(args, trainer_configs=trainer_configs)[actor_config.trainer_id]
-    await trainer.init(compute_trainer_config(args, actor_config))
+    await trainer.init(TrainerControllerInitRequest.from_args(args))
     disposer.add(trainer)
 
     config = GatewayConfig(

@@ -3,9 +3,14 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from miles.backends.megatron_utils.megatron_config import MegatronConfig
-from miles.ray.placement_group import create_trainer_handles, create_training_model, take_over_trainers
+from miles.ray.placement_group import (
+    create_trainer_handles,
+    create_training_model,
+    take_over_trainers,
+)
 from miles.ray.rollout.rollout_executor import compute_rollout_checkpoint_dir
 from miles.ray.specs.train import compute_trainer_configs
+from miles.ray.train.init_request import TrainerControllerInitRequest
 from miles.utils.args.runtime import AllConfig
 from miles.utils.args.trainer_utils import compute_trainer_config
 from miles.utils.arguments import validate_async_off_policy_correction
@@ -27,6 +32,7 @@ async def create_trainers(args: AllConfig, *, rollout_executor: BaseWorkerHandle
     trainer_configs = compute_trainer_configs(args)
     handles = create_trainer_handles(args, trainer_configs=trainer_configs)
     resumed = await take_over_trainers(args, handles=handles)
+    request = TrainerControllerInitRequest.from_args(args)
 
     trainers: dict[str, TrainerInfo] = {}
     for trainer_config in trainer_configs:
@@ -34,9 +40,9 @@ async def create_trainers(args: AllConfig, *, rollout_executor: BaseWorkerHandle
         assert model_id is not None, f"{trainer_config} carries no policy model id"
         trainer_args = compute_trainer_config(args, trainer_config)
         created = await create_training_model(
-            trainer_args,
             handle=handles[trainer_config.trainer_id],
             trainer_id=trainer_config.trainer_id,
+            request=request,
             requested_start_rollout_id=trainer_args.start_rollout_id,
             resumed=resumed,
         )

@@ -26,9 +26,10 @@ from miles.ray.specs.train import (
     create_trainer_controller_handle,
     external_trainer_controller_addrs,
 )
+from miles.ray.train.init_request import TrainerControllerInitRequest
 from miles.ray.train_actor import WeightUpdateOutput
 from miles.ray.wiring import get_backend_capability
-from miles.utils.args.runtime import AllConfig, TrainerConfig
+from miles.utils.args.runtime import AllConfig
 from miles.utils.args.trainer_utils import compute_trainer_config
 from miles.utils.audit_utils.checksum_utils import (
     ChecksumCollectionFailure,
@@ -207,14 +208,14 @@ def _trainer_has_checkpoint(args) -> bool:
 
 # TODO: move (when reorganizing files)
 async def create_training_model(
-    args: TrainerConfig,
     *,
     handle: BaseWorkerHandle,
     trainer_id: str,
+    request: TrainerControllerInitRequest,
     requested_start_rollout_id: int | None,
     resumed: bool,
 ) -> TrainerInfo:
-    restored_rollout_ids = await trainer_init_or_load_state(handle, args, trainer_id=trainer_id, resumed=resumed)
+    restored_rollout_ids = await trainer_init_or_load_state(handle, request, trainer_id=trainer_id, resumed=resumed)
     assert len(set(restored_rollout_ids)) == 1, f"trainer {trainer_id!r} restored {restored_rollout_ids}"
     [restored_rollout_id] = set(restored_rollout_ids)
 
@@ -239,12 +240,14 @@ async def create_training_models(
     handles = create_trainer_handles(args, trainer_configs=trainer_configs)
     resumed = await take_over_trainers(args, handles=handles)
 
+    request = TrainerControllerInitRequest.from_args(args)
+
     [actor_config] = [config for config in trainer_configs if config.role == ACTOR_ROLE]
     actor_args = compute_trainer_config(args, actor_config)
     actor_info = await create_training_model(
-        actor_args,
         handle=handles[actor_config.trainer_id],
         trainer_id=actor_config.trainer_id,
+        request=request,
         requested_start_rollout_id=actor_args.start_rollout_id,
         resumed=resumed,
     )
@@ -255,9 +258,9 @@ async def create_training_models(
         [critic_config] = critic_configs
         critic_args = compute_trainer_config(args, critic_config)
         critic_info = await create_training_model(
-            critic_args,
             handle=handles[critic_config.trainer_id],
             trainer_id=critic_config.trainer_id,
+            request=request,
             requested_start_rollout_id=critic_args.start_rollout_id,
             resumed=resumed,
         )

@@ -14,6 +14,7 @@ from miles.ray.rollout.inference_controller import UpdatableEngines
 from miles.ray.specs.train import compute_trainer_pool_id
 from miles.ray.train.cell import TrainerCell
 from miles.ray.train.cell_monitor import create_trainer_cell_health_checker
+from miles.ray.train.init_request import TrainerControllerInitRequest
 from miles.ray.train_actor import WeightUpdateOutput
 from miles.utils import object_store
 from miles.utils.args.runtime import TrainerConfig
@@ -43,7 +44,6 @@ from miles.utils.test_utils.fault_injector.controller import fault_hook_controll
 from miles.utils.test_utils.fault_injector.models import FaultHookName, FaultHookOwner
 from miles.utils.tracking_utils.structured_log import log_structured
 from miles.utils.workers.cell_operations.base import BaseCellOperations
-from miles.utils.workers.rpc.common.wire_types import Pickled
 from miles.utils.workers.types import DeploymentIdentity
 from miles.utils.workers.worker_provider.base import BaseWorkerProvider, CellInfo, StopWatchFn
 from miles.utils.workers.worker_provider.utils import apply_cell_observation
@@ -333,12 +333,15 @@ class TrainerController:
     # ------------------------ API :: others ------------------------
 
     @init_once
-    async def init(self, args: Pickled) -> list[Any]:
+    async def init(self, request: TrainerControllerInitRequest) -> list[Any]:
         """
         Observe the controller's cells, then allocate GPU resources and initialize
         model, optimzier, local ckpt, etc.
         """
-        self.args = args
+        args = self.args
+        args.num_rollout = request.num_rollout
+        args.wandb_run_id = request.wandb_run_id
+        args.mlflow_run_id = request.mlflow_run_id
         configure_logger(
             args, source=TrainerControllerProcessIdentity(trainer_id=self._trainer_id, model_id=args.trainer_model_id)
         )
