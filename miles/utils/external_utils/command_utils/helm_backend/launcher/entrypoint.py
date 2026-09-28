@@ -47,7 +47,10 @@ from miles.utils.external_utils.command_utils.helm_backend.launcher.manifest_typ
 from miles.utils.external_utils.command_utils.helm_backend.launcher.observability import farewell, with_observability
 from miles.utils.external_utils.command_utils.helm_backend.launcher.observability.diagnosis import collect_diagnosis
 from miles.utils.external_utils.command_utils.helm_backend.launcher.observability.pod_facts import observed_pod
-from miles.utils.external_utils.command_utils.helm_backend.launcher.values.builder import build_values
+from miles.utils.external_utils.command_utils.helm_backend.launcher.values.builder import (
+    build_values,
+    compute_static_connections,
+)
 from miles.utils.external_utils.command_utils.helm_backend.launcher.values.misc import (
     InfraInfo,
     LaunchPlan,
@@ -119,8 +122,10 @@ def execute_train(
 
     run_directory = RunFiles.run_dir(shared_root=shared_root, run_id=run_id)
 
+    scaling = ScalingConfig.slice_from(args)
     with override_env(env):
         specs = compute_specs(args)
+        static_connections = compute_static_connections(specs, scaling=scaling)
 
     if config.ci_run:
         _uninstall_leftover_ci_releases(namespace, keep_run_id=run_id)
@@ -167,7 +172,8 @@ def execute_train(
             }
         )
         _write_helm_values(
-            values_path, build_values(specs, rendered, scaling=ScalingConfig.slice_from(args)).as_values()
+            values_path,
+            build_values(specs, rendered, scaling=scaling, static_connections=static_connections).as_values(),
         )
         return computed, Helm.render_upgrade(
             release=release, namespace=namespace, chart=chart, values_files=values_files
