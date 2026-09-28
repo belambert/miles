@@ -586,9 +586,9 @@ def _validate_static_addrs_external_launch(args: argparse.Namespace, *, componen
 
 def _validate_registration(args: argparse.Namespace, *, component: DeployComponent) -> None:
     if (init_expected := args.init_expected_num_cells) is not None:
-        assert component is DeployComponent.PRIMARY, (
-            f"--init-expected-num-cells needs --deploy-component {DeployComponent.PRIMARY.value}, not "
-            f"{component.value}"
+        assert component in (DeployComponent.ALL, DeployComponent.PRIMARY), (
+            f"--init-expected-num-cells gates the run that drives the engines, so it needs --deploy-component "
+            f"{DeployComponent.ALL.value} or {DeployComponent.PRIMARY.value}, not {component.value}"
         )
         assert (
             init_expected >= 1
