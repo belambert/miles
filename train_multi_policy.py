@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 async def train_multi_policy(args, *, disposer: Disposer) -> None:
     megatron_config = args.raw_megatron
     validate_multi_policy_args(args, megatron_config=megatron_config)
-    _worker_manager = init_orchestration_script(args, disposer=disposer)
+    init_orchestration_script(args, disposer=disposer)
 
     define_policy_metric_groups(megatron_config)
 
