@@ -28,7 +28,6 @@ from miles.ray.specs.train import (
 )
 from miles.ray.train.init_request import TrainerControllerInitRequest
 from miles.ray.train_actor import WeightUpdateOutput
-from miles.ray.wiring import get_backend_capability
 from miles.utils.args.runtime import AllConfig
 from miles.utils.audit_utils.checksum_utils import (
     ChecksumCollectionFailure,
@@ -51,6 +50,7 @@ from miles.utils.hot_restart import (
 from miles.utils.test_utils.fault_injector.controller import reach_fault_hook_async
 from miles.utils.test_utils.fault_injector.models import FaultHookName
 from miles.utils.workers.types import DeployComponent, DeploymentIdentity
+from miles.utils.workers.backend_capability.base import BackendCapability
 from miles.utils.workers.worker_handle import BaseWorkerHandle
 from miles.utils.workers.worker_provider.static import wait_static_addrs_ready
 
@@ -181,8 +181,9 @@ class TrainerInfo(NamedTuple):
 
 
 # TODO: move (when reorganizing files)
-def create_trainer_handles(args, *, trainer_configs: list[MegatronTrainerConfig]) -> dict[str, BaseWorkerHandle]:
-    capability = get_backend_capability(args)
+def create_trainer_handles(
+    args, *, trainer_configs: list[MegatronTrainerConfig], capability: BackendCapability
+) -> dict[str, BaseWorkerHandle]:
     return {
         config.trainer_id: create_trainer_controller_handle(args, capability=capability, trainer_id=config.trainer_id)
         for config in trainer_configs
@@ -233,10 +234,10 @@ async def create_training_model(
 
 # TODO: move (when reorganizing files)
 async def create_training_models(
-    args: AllConfig, rollout_executor: BaseWorkerHandle
+    args: AllConfig, rollout_executor: BaseWorkerHandle, *, capability: BackendCapability
 ) -> tuple[BaseWorkerHandle, BaseWorkerHandle | None]:
     trainer_configs = compute_trainer_configs(args)
-    handles = create_trainer_handles(args, trainer_configs=trainer_configs)
+    handles = create_trainer_handles(args, trainer_configs=trainer_configs, capability=capability)
     resumed = await take_over_trainers(args, handles=handles)
 
     request = TrainerControllerInitRequest.from_args(args)
@@ -418,7 +419,11 @@ def _log_inference_engine_weight_checksums(
 
 # TODO: move (when reorganizing files)
 def maybe_start_api_server(
-    args: Namespace, *, trainer_models: dict[str, BaseWorkerHandle], inference_controller: BaseWorkerHandle
+    args: Namespace,
+    *,
+    trainer_models: dict[str, BaseWorkerHandle],
+    inference_controller: BaseWorkerHandle,
+    capability: BackendCapability,
 ) -> ApiServerHandle | None:
     if not args.api_server_port:
         return
@@ -430,7 +435,7 @@ def maybe_start_api_server(
         host=args.api_server_host,
         port=args.api_server_port,
         ft_components=args.ft_components,
-        cell_operations=get_backend_capability(args).cell_operations(),
+        cell_operations=capability.cell_operations(),
     )
 
 
@@ -441,9 +446,7 @@ class RolloutComponents(NamedTuple):
 
 
 # TODO: move (when reorganizing files)
-async def create_rollout_components(args) -> RolloutComponents:
-    capability = get_backend_capability(args)
-
+async def create_rollout_components(args, *, capability: BackendCapability) -> RolloutComponents:
     if not args.debug_train_only or args.eval_num_gpus > 0:
         await resolve_router_addrs(args, router_providers=compute_router_providers(args, capability=capability))
 
