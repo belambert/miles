@@ -207,13 +207,18 @@ def _trainer_has_checkpoint(args) -> bool:
 
 # TODO: move (when reorganizing files)
 async def create_training_model(
-    args: TrainerConfig, *, handle: BaseWorkerHandle, trainer_id: str, resumed: bool
+    args: TrainerConfig,
+    *,
+    handle: BaseWorkerHandle,
+    trainer_id: str,
+    requested_start_rollout_id: int | None,
+    resumed: bool,
 ) -> TrainerInfo:
     restored_rollout_ids = await trainer_init_or_load_state(handle, args, trainer_id=trainer_id, resumed=resumed)
     assert len(set(restored_rollout_ids)) == 1, f"trainer {trainer_id!r} restored {restored_rollout_ids}"
     [restored_rollout_id] = set(restored_rollout_ids)
 
-    if (x := args.start_rollout_id) is None:
+    if (x := requested_start_rollout_id) is None:
         start_rollout_id = restored_rollout_id
     else:
         if x != restored_rollout_id:
@@ -235,10 +240,12 @@ async def create_training_models(
     resumed = await take_over_trainers(args, handles=handles)
 
     [actor_config] = [config for config in trainer_configs if config.role == ACTOR_ROLE]
+    actor_args = compute_trainer_config(args, actor_config)
     actor_info = await create_training_model(
-        compute_trainer_config(args, actor_config),
+        actor_args,
         handle=handles[actor_config.trainer_id],
         trainer_id=actor_config.trainer_id,
+        requested_start_rollout_id=actor_args.start_rollout_id,
         resumed=resumed,
     )
 
@@ -246,10 +253,12 @@ async def create_training_models(
     critic_info = None
     if args.use_critic:
         [critic_config] = critic_configs
+        critic_args = compute_trainer_config(args, critic_config)
         critic_info = await create_training_model(
-            compute_trainer_config(args, critic_config),
+            critic_args,
             handle=handles[critic_config.trainer_id],
             trainer_id=critic_config.trainer_id,
+            requested_start_rollout_id=critic_args.start_rollout_id,
             resumed=resumed,
         )
         assert critic_info.restored_rollout_id == actor_info.restored_rollout_id, (

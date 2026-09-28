@@ -32,10 +32,12 @@ async def create_trainers(args: AllConfig, *, rollout_executor: BaseWorkerHandle
     for trainer_config in trainer_configs:
         model_id = trainer_config.model_id
         assert model_id is not None, f"{trainer_config} carries no policy model id"
+        trainer_args = compute_trainer_config(args, trainer_config)
         created = await create_training_model(
-            compute_trainer_config(args, trainer_config),
+            trainer_args,
             handle=handles[trainer_config.trainer_id],
             trainer_id=trainer_config.trainer_id,
+            requested_start_rollout_id=trainer_args.start_rollout_id,
             resumed=resumed,
         )
         assert model_id not in trainers, f"{trainer_config} shares its model id with an already created trainer"
