@@ -12,7 +12,6 @@ from miles.ray.rollout.rollout_executor import compute_rollout_checkpoint_dir
 from miles.ray.specs.train import compute_trainer_configs
 from miles.ray.train.init_request import TrainerControllerInitRequest
 from miles.utils.args.runtime import AllConfig
-from miles.utils.args.trainer_utils import compute_trainer_config
 from miles.utils.arguments import validate_async_off_policy_correction
 from miles.utils.multi_policy.checkpoint_state import MultiPolicyCheckpointState
 from miles.utils.tracking_utils.tracking import define_step_key_metric_group
@@ -38,12 +37,11 @@ async def create_trainers(args: AllConfig, *, rollout_executor: BaseWorkerHandle
     for trainer_config in trainer_configs:
         model_id = trainer_config.model_id
         assert model_id is not None, f"{trainer_config} carries no policy model id"
-        trainer_args = compute_trainer_config(args, trainer_config)
         created = await create_training_model(
             handle=handles[trainer_config.trainer_id],
             trainer_id=trainer_config.trainer_id,
             request=request,
-            requested_start_rollout_id=trainer_args.start_rollout_id,
+            requested_start_rollout_id=args.start_rollout_id,
             resumed=resumed,
         )
         assert model_id not in trainers, f"{trainer_config} shares its model id with an already created trainer"

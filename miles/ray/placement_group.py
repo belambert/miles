@@ -30,7 +30,6 @@ from miles.ray.train.init_request import TrainerControllerInitRequest
 from miles.ray.train_actor import WeightUpdateOutput
 from miles.ray.wiring import get_backend_capability
 from miles.utils.args.runtime import AllConfig
-from miles.utils.args.trainer_utils import compute_trainer_config
 from miles.utils.audit_utils.checksum_utils import (
     ChecksumCollectionFailure,
     InferenceEngineChecksumSnapshot,
@@ -243,12 +242,11 @@ async def create_training_models(
     request = TrainerControllerInitRequest.from_args(args)
 
     [actor_config] = [config for config in trainer_configs if config.role == ACTOR_ROLE]
-    actor_args = compute_trainer_config(args, actor_config)
     actor_info = await create_training_model(
         handle=handles[actor_config.trainer_id],
         trainer_id=actor_config.trainer_id,
         request=request,
-        requested_start_rollout_id=actor_args.start_rollout_id,
+        requested_start_rollout_id=args.start_rollout_id,
         resumed=resumed,
     )
 
@@ -256,12 +254,11 @@ async def create_training_models(
     critic_info = None
     if args.use_critic:
         [critic_config] = critic_configs
-        critic_args = compute_trainer_config(args, critic_config)
         critic_info = await create_training_model(
             handle=handles[critic_config.trainer_id],
             trainer_id=critic_config.trainer_id,
             request=request,
-            requested_start_rollout_id=critic_args.start_rollout_id,
+            requested_start_rollout_id=args.start_rollout_id,
             resumed=resumed,
         )
         assert critic_info.restored_rollout_id == actor_info.restored_rollout_id, (
