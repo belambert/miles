@@ -40,6 +40,7 @@ from miles.rollout.base_types import (
 from miles.rollout.filter_hub.base_types import MetricGatherer
 from miles.rollout.filter_hub.common_filters import apply_preput_filters
 from miles.rollout.generate_utils.prefill_logprobs import recompute_samples_rollout_logprobs_via_prefill
+from miles.utils.args.custom_view import ImmutableNamespace
 from miles.utils.lora.utils import LORA_ADAPTER_NAME, is_lora_enabled
 from miles.utils.types import Sample
 
@@ -166,7 +167,7 @@ def _train_client(
     *,
     router_args: Namespace | None = None,
 ):
-    tokenizer_source = getattr(args, "sglang_tokenizer_path", None) or model
+    tokenizer_source = args.sglang.common_value("tokenizer_path") or model
     identity = _renderer_identity(model) or _renderer_identity(tokenizer_source)
 
     # TrainClient uses one path for both tokenizer loading and renderer lookup.
@@ -537,8 +538,8 @@ def _flatten_samples(values: Iterable[Any]) -> list[Sample]:
     return flattened
 
 
-def _make_eval_args(args: Namespace) -> Namespace:
-    eval_args = Namespace(**vars(args))
+def _make_eval_args(args: ImmutableNamespace) -> Namespace:
+    eval_args = Namespace(**dict(args))
     for eval_name, rollout_name in (
         ("eval_temperature", "rollout_temperature"),
         ("eval_top_p", "rollout_top_p"),
@@ -628,7 +629,7 @@ class VerifiersRolloutFn(BaseRolloutFn):
         self.eval_args = _make_eval_args(self.args)
         self.eval_sampling = self._sampling_config(runtime.SamplingConfig, self.eval_args)
 
-        engine_count = self.args.rollout_num_gpus // self.args.rollout_num_gpus_per_engine
+        engine_count = max(self.args.inference_runtime_mut_state.engine_count, 1)
         self.max_concurrent = self.args.sglang_server_concurrency * engine_count
         pool_size = max(1, min(self.max_concurrent, 16))
         self.client = _train_client(runtime, self.args, self.model, pool_size)
@@ -680,7 +681,7 @@ class VerifiersRolloutFn(BaseRolloutFn):
         runtime = _import_verifiers()
         ctx = ctx or self.ctx
         episode = self.env.episode(task, ctx, n=n)
-        if getattr(self.args, "sglang_enable_deterministic_inference", False):
+        if self.args.sglang.common_value("enable_deterministic_inference"):
             for offset, rollout in enumerate(episode.rollouts):
                 sampling = ctx.sampling.model_copy(update={"sampling_seed": seed_base + offset})
                 rollout.ctx = runtime.ModelContext(client=ctx.client, model=self.model, sampling=sampling)
