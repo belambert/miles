@@ -33,7 +33,8 @@ class CustomFunctionConfig(BaseConfig):
 def add_user_provided_function_arguments(
     parser: argparse.ArgumentParser,
     *,
-    modify_args: Callable[[argparse.Namespace], None],
+    modify_args: Callable[[argparse.Namespace], None] | None = None,
+    config_class: type[BaseConfig] | None = None,
 ) -> argparse.ArgumentParser:
     try:
         with with_relax_parser_required_args(parser), with_suppressed_parser_help(parser):
@@ -41,31 +42,34 @@ def add_user_provided_function_arguments(
     except SystemExit:
         return parser
 
-    modify_args(args_partial)
-    infos = _compute_custom_function_field_infos(args_partial, partial=True)
+    if modify_args is not None:
+        modify_args(args_partial)
+    infos = _compute_custom_function_field_infos(args_partial, partial=True, config_class=config_class)
     registered_paths: set[str] = set()
     registered_config_classes: set[type[BaseConfig]] = set()
     for info in infos:
         if info.path in registered_paths:
             continue
         registered_paths.add(info.path)
-        if (config_class := info.config_class) is not None and config_class not in registered_config_classes:
-            config_class.add_arguments(parser=parser)
-            registered_config_classes.add(config_class)
+        if (
+            function_config_class := info.config_class
+        ) is not None and function_config_class not in registered_config_classes:
+            function_config_class.add_arguments(parser=parser)
+            registered_config_classes.add(function_config_class)
     return parser
 
 
-def resolve_custom_function_configs(args: argparse.Namespace) -> None:
+def resolve_custom_function_configs(args: argparse.Namespace, *, config_class: type[BaseConfig] | None = None) -> None:
     custom_arg_names: set[str] = set()
-    for info in _compute_custom_function_field_infos(args):
+    for info in _compute_custom_function_field_infos(args, config_class=config_class):
         config = None
-        if (config_class := info.config_class) is not None:
-            config = config_class.model_validate(
+        if (function_config_class := info.config_class) is not None:
+            config = function_config_class.model_validate(
                 {
-                    key: getattr(args, key) for key in config_class.model_fields if hasattr(args, key)
+                    key: getattr(args, key) for key in function_config_class.model_fields if hasattr(args, key)
                 }  # config-access-exempt: schema-selected fields
             )
-            custom_arg_names.update(config_class.model_fields)
+            custom_arg_names.update(function_config_class.model_fields)
         setattr(args, info.name, CustomFunctionConfig(path=info.path, config=config))
 
     for name in custom_arg_names:
@@ -82,7 +86,7 @@ class _CustomFunctionFieldInfo:
 
 
 def _compute_custom_function_field_infos(
-    args: argparse.Namespace, *, partial: bool = False
+    args: argparse.Namespace, *, partial: bool = False, config_class: type[BaseConfig] | None = None
 ) -> list[_CustomFunctionFieldInfo]:
     from miles.utils.args.runtime import AllConfig
 
@@ -91,7 +95,7 @@ def _compute_custom_function_field_infos(
             name,
             getattr(args, name, None) if partial else getattr(args, name),
         )  # config-access-exempt: schema-selected field
-        for name, field in AllConfig.model_fields.items()
+        for name, field in (config_class or AllConfig).model_fields.items()
         if field.annotation in {CustomFunctionConfig, CustomFunctionConfig | None}
     ]
     infos = []
