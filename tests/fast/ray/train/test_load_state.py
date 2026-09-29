@@ -12,11 +12,6 @@ from miles.utils.init_once import InitOnce
 pytestmark = pytest.mark.asyncio
 
 
-@pytest.fixture(autouse=True)
-def _expected_controller_fleet(monkeypatch):
-    monkeypatch.setattr(group_module, "compute_trainer_num_cells", lambda args, *, role: args.expected_num_cells)
-
-
 class _FakeCell:
     def __init__(self, *, cell_index: int, restored: list[int], is_alive: bool = True) -> None:
         self.cell_index = cell_index
@@ -47,7 +42,7 @@ def _make_controller(
     controller._role = "actor"
     controller._pool_id = compute_trainer_pool_id("actor")
     controller.args = SimpleNamespace(
-        expected_num_cells=len(cells) if expected_num_cells is None else expected_num_cells
+        trainer_init_expected_num_cells=len(cells) if expected_num_cells is None else expected_num_cells
     )
     return controller
 

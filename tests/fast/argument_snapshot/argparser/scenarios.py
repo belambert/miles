@@ -71,7 +71,8 @@ def _capture_scenario(scenario: _Scenario) -> dict[str, Any]:
     arguments.extend(scenario.arguments)
     with _environment(arguments=arguments, legacy=scenario.legacy):
         _, parser = parse_args_and_get_parser()
-        parsed = {"minimal": vars(parser.parse_args(arguments))}
+        minimal = vars(parser.parse_args(arguments))
+        parsed = {"minimal": minimal}
         variants = {
             "lora_disabled": ["--no-sglang-lora-use-virtual-experts"],
             "sglang_alias": ["--sglang-tp-size", "2"],
@@ -79,8 +80,15 @@ def _capture_scenario(scenario: _Scenario) -> dict[str, Any]:
             "eval_false": ["--no-eval-sglang-enable-metrics"],
         }
         for name, extra in variants.items():
-            parsed[name] = vars(parser.parse_args(arguments + extra))
+            parsed[name] = _parsed_difference(base=minimal, parsed=vars(parser.parse_args(arguments + extra)))
         return {"argv": arguments, "legacy": scenario.legacy, "schema": snapshot_parser(parser), "parsed": parsed}
+
+
+def _parsed_difference(*, base: dict[str, Any], parsed: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "changed": {name: value for name, value in parsed.items() if name not in base or base[name] != value},
+        "removed": sorted(base.keys() - parsed.keys()),
+    }
 
 
 class _HookConfig(BaseConfig):

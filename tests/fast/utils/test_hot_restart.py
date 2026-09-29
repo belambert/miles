@@ -17,6 +17,7 @@ from miles.ray.rollout.inference_controller import InferenceController
 from miles.ray.rollout.rollout_executor import RolloutExecutor
 from miles.ray.rollout.rollout_server import RolloutServer
 from miles.ray.train.group import TrainerController
+from miles.ray.train.init_request import TrainerControllerInitRequest
 from miles.utils import hot_restart as hot_restart_module
 from miles.utils.context_lock import ContextLock
 from miles.utils.hot_restart import (
@@ -36,10 +37,11 @@ from miles.utils.workers.worker_spec import NamedHostAndPorts
 
 _TRAINER_ID = "policy_a-actor"
 _OTHER_TRAINER_ID = "policy_b-actor"
+_INIT_REQUEST = TrainerControllerInitRequest(num_rollout=6, wandb_run_id="wandb", mlflow_run_id=None)
 _STALLED_SECONDS = 5.0
 _SHORT_BUDGET_SECONDS = 0.05
-_BROADCAST_ARGS = Namespace(update_weight_transfer_mode="broadcast")
-_DISK_DELTA_ARGS = Namespace(update_weight_transfer_mode="disk-delta")
+_BROADCAST_ARGS = Namespace(update_weight_transfer_mode="broadcast", custom_agent_function_path=None)
+_DISK_DELTA_ARGS = Namespace(update_weight_transfer_mode="disk-delta", custom_agent_function_path=None)
 
 
 class _FakeTrainer:
@@ -59,13 +61,15 @@ class _FakeTrainer:
         self.fleet_calls = fleet_calls
         self.calls: list[str] = []
         self.idle_timeouts: list[float] = []
+        self.init_requests: list[TrainerControllerInitRequest] = []
 
     async def is_initialized(self) -> bool:
         self._record("is_initialized")
         return self.initialized
 
-    async def init(self, model_args: Namespace) -> list[Any]:
+    async def init(self, request: TrainerControllerInitRequest) -> list[Any]:
         self._record("init")
+        self.init_requests.append(request)
         return [7]
 
     async def load_state(self) -> list[Any]:
@@ -371,9 +375,10 @@ class TestTheTrainerStateIsRolledBack:
         cold = _FakeTrainer(initialized=False)
         warm = _FakeTrainer(initialized=True)
 
-        assert await trainer_init_or_load_state(cold, Namespace(), trainer_id=_TRAINER_ID, resumed=False) == [7]
-        assert await trainer_init_or_load_state(warm, Namespace(), trainer_id=_TRAINER_ID, resumed=True) == [3]
+        assert await trainer_init_or_load_state(cold, _INIT_REQUEST, trainer_id=_TRAINER_ID, resumed=False) == [7]
+        assert await trainer_init_or_load_state(warm, _INIT_REQUEST, trainer_id=_TRAINER_ID, resumed=True) == [3]
         assert cold.calls == ["init"] and warm.calls == ["load_state"]
+        assert cold.init_requests == [_INIT_REQUEST]
 
     async def test_a_reload_that_never_returns_fails_loud(self, short_reload_budget: None):
         """A trainer wedged inside load_state would otherwise leave the run waiting on it forever."""
@@ -381,7 +386,7 @@ class TestTheTrainerStateIsRolledBack:
 
         started = time.monotonic()
         with pytest.raises(asyncio.TimeoutError):
-            await trainer_init_or_load_state(trainer, Namespace(), trainer_id=_TRAINER_ID, resumed=True)
+            await trainer_init_or_load_state(trainer, _INIT_REQUEST, trainer_id=_TRAINER_ID, resumed=True)
 
         assert time.monotonic() - started < _STALLED_SECONDS
 
@@ -391,8 +396,10 @@ class TestTheTrainerStateIsRolledBack:
         first = _FakeTrainer(initialized=True, load_seconds=0.2)
         second = _FakeTrainer(initialized=True, load_seconds=0.2)
 
-        assert await trainer_init_or_load_state(first, Namespace(), trainer_id=_TRAINER_ID, resumed=True) == [3]
-        assert await trainer_init_or_load_state(second, Namespace(), trainer_id=_OTHER_TRAINER_ID, resumed=True) == [3]
+        assert await trainer_init_or_load_state(first, _INIT_REQUEST, trainer_id=_TRAINER_ID, resumed=True) == [3]
+        assert await trainer_init_or_load_state(second, _INIT_REQUEST, trainer_id=_OTHER_TRAINER_ID, resumed=True) == [
+            3
+        ]
 
 
 class TestTheReloadHasABudgetOfItsOwn:
@@ -404,14 +411,14 @@ class TestTheReloadHasABudgetOfItsOwn:
         """The gate budget is spent by the time the reload starts, and reusing it would refuse every real reload."""
         trainer = _FakeTrainer(initialized=True, load_seconds=_SHORT_BUDGET_SECONDS * 3)
 
-        assert await trainer_init_or_load_state(trainer, Namespace(), trainer_id=_TRAINER_ID, resumed=True) == [3]
+        assert await trainer_init_or_load_state(trainer, _INIT_REQUEST, trainer_id=_TRAINER_ID, resumed=True) == [3]
 
     async def test_a_reload_that_never_ends_fails_on_its_own_budget(self, short_reload_budget: None):
         """A reload nobody bounds would leave a hot restart hanging without ever starting training."""
         trainer = _FakeTrainer(initialized=True, load_seconds=_STALLED_SECONDS)
 
         with pytest.raises(asyncio.TimeoutError):
-            await trainer_init_or_load_state(trainer, Namespace(), trainer_id=_TRAINER_ID, resumed=True)
+            await trainer_init_or_load_state(trainer, _INIT_REQUEST, trainer_id=_TRAINER_ID, resumed=True)
 
 
 class TestTheInferenceSideIsInitedOrReset:

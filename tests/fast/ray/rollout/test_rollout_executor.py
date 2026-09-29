@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 import torch
-from tests.fast.ray.rollout.conftest import make_args, make_sample
+from tests.fast.ray.rollout.conftest import FakeInferenceTopologyProvider, make_args, make_rollout_config, make_sample
 from tests.fast.train_parallel_config_utils import make_train_parallel_config
 
 from miles.backends.training_utils.types import TrainStepOutcome
@@ -25,6 +25,7 @@ from miles.rollout.base_types import (
 from miles.rollout.data_source import RolloutDataSource
 from miles.rollout.inference_rollout import inference_rollout_common
 from miles.rollout.inference_rollout.inference_rollout_common import GenerateState
+from miles.utils.args.component_rollout import InferenceRuntimeImmutState, InferenceRuntimeMutState
 from miles.utils.audit_utils.event_analyzer.rules.sample_ownership.models import SampleOwnershipViolation
 from miles.utils.audit_utils.event_logger.logger import EventLogger, read_events, set_event_logger
 from miles.utils.audit_utils.event_logger.models import (
@@ -43,6 +44,10 @@ from miles.utils.workers.worker_spec import HostAndPort
 class FakeInferenceController:
     def __init__(self) -> None:
         self.pins: list[tuple[str, str]] = []
+        self.info: EvalFleetInfo | None = None
+
+    async def get_eval_fleet_info(self) -> EvalFleetInfo | None:
+        return self.info
 
     async def pin_eval_fleet(self, *, checkpoint_dir: str, weight_version: str) -> EvalFleetPin:
         self.pins.append((checkpoint_dir, weight_version))
@@ -189,7 +194,7 @@ class TestSetEvalFleetInfo:
         provider = FakeInferenceControllerProvider(controller)
         eval_function = FakeEvalFunction()
         executor = RolloutExecutor.__new__(RolloutExecutor)
-        executor.args = Namespace(
+        executor.args = make_rollout_config(
             chat_template_path=None,
             custom_eval_rollout_log_function_path=None,
             custom_generate_function_path=None,
@@ -217,11 +222,8 @@ class TestSetEvalFleetInfo:
         executor.eval_generate_rollout = eval_function
         executor.last_get_rollout_id_of_model_id = {None: 9}
         executor._metric_checker = None
-        info = EvalFleetInfo(
-            router=HostAndPort(host="10.0.0.2", port=31000),
-            num_gpus=2,
-            num_gpus_per_engine=1,
-        )
+        info = EvalFleetInfo(router=HostAndPort(host="10.0.0.2", port=31000), engine_gpu_counts=[1, 1])
+        controller.info = info
 
         await executor.set_eval_fleet_info(info)
         await executor._eval_checkpoint(
@@ -243,8 +245,9 @@ class TestSetEvalFleetInfo:
         assert isinstance(first.generate_state, GenerateState)
         assert first.generate_state.args.sglang_router_ip == info.router.host
         assert first.generate_state.args.sglang_router_port == info.router.port
-        assert first.generate_state.args.rollout_num_gpus == info.num_gpus
-        assert first.generate_state.args.rollout_num_gpus_per_engine == info.num_gpus_per_engine
+        assert first.generate_state.args.inference_runtime_mut_state == InferenceRuntimeMutState(
+            engine_count=2, gpu_count=2
+        )
         assert second.generate_state is None
 
 
@@ -383,6 +386,9 @@ class TestOutputSnapshotReplay:
     @staticmethod
     def _configure_async_executor(executor: RolloutExecutor, *, args: Namespace, rollout_fn: BaseRolloutFn) -> None:
         executor.args = args
+        executor._inference_controller_provider = FakeInferenceTopologyProvider(
+            InferenceRuntimeImmutState(engine_count=8, gpu_count=8)
+        )
         executor.use_legacy_rollout_v1 = False
         executor.generate_rollout = rollout_fn
         executor.eval_generate_rollout = rollout_fn

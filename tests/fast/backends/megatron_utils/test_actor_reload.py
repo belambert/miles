@@ -8,6 +8,7 @@ from typing import Any
 from unittest.mock import Mock
 
 import pytest
+from tests.fast.fixtures.args_fixtures import make_trainer_args
 
 from miles.utils.init_once import InitOnce
 
@@ -94,7 +95,7 @@ def _args(tmp_path: Path, **overrides) -> Namespace:
         global_batch_size=1,
     )
     defaults.update(overrides)
-    return Namespace(**defaults)
+    return make_trainer_args(**defaults)
 
 
 def _write_checkpoint(directory: Path, *, iteration: int) -> str:
@@ -133,10 +134,10 @@ def _watch_load(actor_module, monkeypatch, *, args: Namespace, iteration: int) -
     seen: dict[str, Any] = {}
 
     def fake_load_checkpoint(*_args: Any, **_kwargs: Any) -> _CheckpointLoadResult:
-        seen["args_during_load"] = vars(args).copy()
+        seen["args_during_load"] = vars(args.backend).copy()
         return _CheckpointLoadResult(
             iteration=iteration,
-            restored_trained_iteration=not args.finetune or iteration > 0,
+            restored_trained_iteration=not args.backend.finetune or iteration > 0,
         )
 
     monkeypatch.setattr(model_module, "load_checkpoint", fake_load_checkpoint)
@@ -249,8 +250,18 @@ class TestTheCheckpointAReloadRollsBackTo:
 
         _actor(actor_module, role="actor", args=args).load_state()
 
-        assert args.load == str(tmp_path / "pretrain")
-        assert (args.finetune, args.no_load_optim, args.no_load_rng, args.ckpt_step) == (True, True, True, 3)
+        assert args.backend.load == str(tmp_path / "pretrain")
+        assert (
+            args.backend.finetune,
+            args.backend.no_load_optim,
+            args.backend.no_load_rng,
+            args.backend.ckpt_step,
+        ) == (
+            True,
+            True,
+            True,
+            3,
+        )
 
     def test_a_critic_reload_reads_the_critic_directory(self, actor_module, tmp_path, monkeypatch):
         """A critic's own arguments carry its checkpoint dirs, so reading them reads the critic's."""

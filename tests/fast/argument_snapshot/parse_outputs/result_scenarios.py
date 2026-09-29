@@ -44,6 +44,12 @@ def result_scenarios() -> dict[str, ResultScenario]:
         error=NotImplementedError,
         message="not supported on the megatron backend",
     )
+    scenarios["fsdp_reject_lora"] = ResultScenario(
+        backend="fsdp",
+        arguments=("--lora-rank", "8", "--target-modules", "q_proj,v_proj"),
+        error=AssertionError,
+        message="LoRA injection is not implemented for FSDP",
+    )
     scenarios["fsdp_true_on_policy"] = ResultScenario(backend="fsdp", arguments=("--true-on-policy-mode",))
     scenarios["fsdp_prefill_logprobs"] = ResultScenario(
         backend="fsdp", arguments=("--true-on-policy-mode", "--recompute-logprobs-via-prefill")
@@ -56,6 +62,9 @@ def result_scenarios() -> dict[str, ResultScenario]:
         message="--fully-async needs the class-based rollout API",
     )
     return scenarios
+
+
+_HF_CHECKPOINT = ("--hf-checkpoint", "$FIXTURES/hf", "--ffn-hidden-size", "512")
 
 
 def _shared_variants() -> dict[str, tuple[str, ...]]:
@@ -84,7 +93,14 @@ def _shared_variants() -> dict[str, tuple[str, ...]]:
         "load_rollout": ("--load-debug-rollout-data", "$FIXTURES/rollout.pt"),
         "save": ("--save", "$FIXTURES/save", "--save-interval", "2"),
         "dump_details": ("--dump-details", "$FIXTURES/dump"),
-        "explicit_event_directory": ("--save", "$FIXTURES/save", "--save-debug-event-data", "$FIXTURES/events"),
+        "explicit_event_directory": (
+            "--save",
+            "$FIXTURES/save",
+            "--save-interval",
+            "2",
+            "--save-debug-event-data",
+            "$FIXTURES/events",
+        ),
         "load_fallback": ("--load", "$FIXTURES/missing", "--ref-load", "$FIXTURES/ref", "--ref-ckpt-step", "7"),
         "load_existing": ("--load", "$FIXTURES/checkpoint"),
         "custom_yaml": ("--custom-config-path", "$FIXTURES/custom.yaml", "--lr", "0.000003"),
@@ -145,8 +161,15 @@ def _shared_variants() -> dict[str, tuple[str, ...]]:
             "2",
         ),
         "sglang_tp_derived": ("--sglang-tp-size", "8", "--rollout-num-gpus-per-engine", "2"),
-        "rollout_ft": ("--use-fault-tolerance",),
-        "ft_explicit_api": ("--use-fault-tolerance", "--api-server-port", "23456", "--no-mini-ft-controller-enable"),
+        "rollout_ft": ("--use-fault-tolerance", "--update-weight-transfer-mode", "p2p"),
+        "ft_explicit_api": (
+            "--use-fault-tolerance",
+            "--update-weight-transfer-mode",
+            "p2p",
+            "--api-server-port",
+            "23456",
+            "--no-mini-ft-controller-enable",
+        ),
         "opd_external": ("--use-opd", "--opd-type", "sglang"),
         "rollout_logprobs": ("--use-rollout-logprobs",),
         "ci": ("--ci-test", "--no-enable-sample-ownership-checker", "--save-debug-event-data", "$FIXTURES/events"),
@@ -158,7 +181,6 @@ def _shared_variants() -> dict[str, tuple[str, ...]]:
         ),
         "ray_rpc": ("--worker-comm-backend", "rpc"),
         "external_rollout": ("--rollout-external-engine-addrs", "127.0.0.1:30000"),
-        "lora_targets": ("--lora-rank", "8", "--target-modules", "q_proj,v_proj", "--exclude-modules", "v_proj"),
     }
 
 
@@ -181,7 +203,26 @@ def _megatron_variants() -> dict[str, tuple[str, ...]]:
             "2",
         ),
         "ppo": ("--advantage-estimator", "ppo"),
-        "ppo_save": ("--advantage-estimator", "ppo", "--save", "$FIXTURES/save", "--critic-lr", "0.000001"),
+        "ppo_save": (
+            "--advantage-estimator",
+            "ppo",
+            "--save",
+            "$FIXTURES/save",
+            "--save-interval",
+            "2",
+            "--critic-lr",
+            "0.000001",
+        ),
+        "lora_targets": (
+            *_HF_CHECKPOINT,
+            "--lora-rank",
+            "8",
+            "--target-modules",
+            "attn",
+            "--exclude-modules",
+            "v_proj",
+        ),
+        "lora_default_targets": (*_HF_CHECKPOINT, "--lora-rank", "8"),
         "offload_disk": (
             "--offload-train",
             "--offload-train-target",
@@ -285,7 +326,6 @@ def _rejected_variants() -> dict[str, tuple[tuple[str, ...], type[Exception], st
             AssertionError,
             "not compatible with --colocate",
         ),
-        "lora_without_targets": (("--lora-rank", "8"), AssertionError, "'--target-modules' is required"),
         "mini_ft_without_api": (
             ("--mini-ft-controller-enable", "--api-server-port", "0"),
             ValueError,

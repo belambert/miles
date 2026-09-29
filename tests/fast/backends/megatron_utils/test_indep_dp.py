@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 import torch
+from tests.fast.fixtures.args_fixtures import make_trainer_args
 
 from miles.backends.megatron_utils.ft import indep_dp
 from miles.utils.ft_utils.indep_dp import IndepDPInfo
@@ -129,7 +130,7 @@ class TestAllreduceGradsAndLossesAcrossReplicas:
 
     @staticmethod
     def _run(pg, util) -> tuple[bool, dict[str, float]]:
-        args = SimpleNamespace(calculate_per_token_loss=False)
+        args = make_trainer_args(calculate_per_token_loss=False)
         with patch.object(indep_dp.GeneralPGUtil, "create", return_value=util):
             return indep_dp.allreduce_grads_and_losses_across_replicas(
                 args, [_make_model_chunk()], _make_parallel_state(pg), losses_reduced=[]
@@ -157,7 +158,7 @@ class TestAllreduceGradsAndLossesAcrossReplicas:
         pg = SimpleNamespace(errored=lambda: None)
         util = FakeCrossCellPGUtil()
         calls = []
-        args = SimpleNamespace(calculate_per_token_loss=False)
+        args = make_trainer_args(calculate_per_token_loss=False)
 
         with patch.object(indep_dp.GeneralPGUtil, "create", return_value=util):
             consensus, _ = indep_dp.allreduce_grads_and_losses_across_replicas(
@@ -175,7 +176,7 @@ class TestAllreduceGradsAndLossesAcrossReplicas:
         """A failed metadata collective cannot leave a successful optimizer step."""
         pg = SimpleNamespace(errored=lambda: None)
         util = FakeCrossCellPGUtil()
-        args = SimpleNamespace(calculate_per_token_loss=False)
+        args = make_trainer_args(calculate_per_token_loss=False)
 
         with patch.object(indep_dp.GeneralPGUtil, "create", return_value=util):
             consensus, _ = indep_dp.allreduce_grads_and_losses_across_replicas(

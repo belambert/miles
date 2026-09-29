@@ -13,8 +13,10 @@ from unittest.mock import patch
 import pytest
 from tests.fast.fixtures.megatron_config_fixtures import encode_megatron_config, write_megatron_config_trainers
 
+from miles.backends.megatron_utils.megatron_config import MegatronConfig
 from miles.backends.sglang_utils.arguments import add_sglang_arguments, collect_eval_sglang_overrides
 from miles.backends.sglang_utils.arguments import validate_args as validate_sglang_args
+from miles.utils.args.configs.router import RouterConfig
 from miles.utils.arguments import (
     FULLY_ASYNC_ROLLOUT_PATH,
     _compute_custom_inference_engine_provider_path,
@@ -62,10 +64,15 @@ def _set_megatron_parallel_sizes(args: argparse.Namespace) -> None:
         setattr(args, name, size)
 
 
-def _parse_megatron_args(extra: list[str]) -> argparse.Namespace:
-    parser = argparse.ArgumentParser()
+def _megatron_and_miles_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(allow_abbrev=False)
+    MegatronConfig.add_arguments(parser)
     get_miles_extra_args_provider()(parser)
-    args = parser.parse_args(extra + ["--num-rollout", "1"] + REQUIRED_ARGS)
+    return parser
+
+
+def _parse_megatron_args(extra: list[str]) -> argparse.Namespace:
+    args = _megatron_and_miles_parser().parse_args(extra + ["--num-rollout", "1"] + REQUIRED_ARGS)
     _set_megatron_parallel_sizes(args)
     return args
 
@@ -567,7 +574,7 @@ class TestSampleOwnershipCheckArguments:
         """Several actor lineages cannot share the single-policy current-witness checker."""
         monkeypatch.setattr(
             "miles.utils.arguments.resolve_megatron_config",
-            lambda _args: SimpleNamespace(
+            lambda _args, *, base_args: SimpleNamespace(
                 trainers=[
                     SimpleNamespace(role="actor"),
                     SimpleNamespace(role="actor"),
@@ -713,10 +720,12 @@ def test_fully_async_eval_resolves_to_the_producer_itself():
     instance only when both paths match."""
     path = "miles.rollout.fully_async_rollout.FullyAsyncRolloutFn"
     default = SimpleNamespace(rollout_function_path=None, eval_function_path=None, fully_async=True)
-    assert resolve_rollout_function_paths(default) == (path, path)
+    resolve_rollout_function_paths(default)
+    assert (default.rollout_function_path, default.eval_function_path) == (path, path)
 
     override = SimpleNamespace(rollout_function_path=None, eval_function_path="pkg.CustomEval", fully_async=True)
-    assert resolve_rollout_function_paths(override) == (path, "pkg.CustomEval")
+    resolve_rollout_function_paths(override)
+    assert (override.rollout_function_path, override.eval_function_path) == (path, "pkg.CustomEval")
 
 
 def _fully_async_candidate_args(**overrides) -> SimpleNamespace:
@@ -854,9 +863,7 @@ def test_fully_async_colocate_rejects_rollout_fault_tolerance():
 class TestClusterBackend:
 
     def _parse(self, extra):
-        parser = argparse.ArgumentParser()
-        get_miles_extra_args_provider()(parser)
-        return parser.parse_args(extra + REQUIRED_ARGS)
+        return _megatron_and_miles_parser().parse_args(extra + REQUIRED_ARGS)
 
     def test_defaults_to_ray(self):
         """Runs that do not mention the flag keep the ray-launched worker behaviour."""
@@ -1191,6 +1198,7 @@ def test_sampling_replay_and_logprobs_mode_are_derived_from_rollout_filters(samp
 
 def test_sglang_parallel_sizes_keep_server_args_destinations():
     parser = add_sglang_arguments(argparse.ArgumentParser())
+    RouterConfig.add_arguments(parser)
     args = parser.parse_args(
         [
             "--sglang-tp-size",
@@ -1209,6 +1217,7 @@ def test_sglang_parallel_sizes_keep_server_args_destinations():
     args.true_on_policy_mode = False
     args.sglang_enable_dp_attention = True
     args.use_session_server = False
+    args.recompute_logprobs_via_prefill = False
 
     validate_sglang_args(args)
 
@@ -1588,14 +1597,17 @@ class TestInitExpectedNumCells:
                 )
             )
 
-    def test_an_unsplit_run_is_refused_the_flag(self):
-        """It deploys every engine it waits for, so the fleet it starts on is not something to be told."""
-        with pytest.raises(AssertionError, match="--init-expected-num-cells"):
-            _validate_deploy_component(_parse_deploy_args(["--init-expected-num-cells", "2"]))
+    def test_an_unsplit_run_takes_the_flag_to_keep_its_configs_unchanged_while_it_scales(self):
+        """Its derived default follows the engine count, so an elastic run pins it to keep every payload the same."""
+        args = _parse_deploy_args(["--init-expected-num-cells", "2"])
 
-    def test_the_refusal_names_the_deployment_that_does_take_the_flag(self):
-        """Whoever launched the wrong half has to be told which half to move the flag to."""
-        with pytest.raises(AssertionError, match="primary"):
+        _validate_deploy_component(args)
+
+        assert args.init_expected_num_cells == 2
+
+    def test_the_refusal_names_the_deployments_that_do_take_the_flag(self):
+        """Whoever launched the wrong half has to be told which deployments to move the flag to."""
+        with pytest.raises(AssertionError, match="needs --deploy-component all or primary"):
             _validate_deploy_component(
                 _parse_deploy_args(
                     ["--deploy-component", "trainer", *_SHARED_STORE_ARGS, "--init-expected-num-cells", "2"]
@@ -2624,9 +2636,7 @@ class TestMultiLoRAValidation:
         )
 
     def _parse(self, extra):
-        parser = argparse.ArgumentParser()
-        get_miles_extra_args_provider()(parser)
-        return parser.parse_args(
+        return _megatron_and_miles_parser().parse_args(
             [
                 "--multi-lora-n-adapters",
                 "2",
@@ -2878,6 +2888,7 @@ class TestDebugUnifiedGradFusedLogprobArgument:
 def test_sglang_parallel_sizes_use_short_namespace_fields(parallel_args, expected):
     parser = argparse.ArgumentParser()
     add_sglang_arguments(parser)
+    RouterConfig.add_arguments(parser)
     args = parser.parse_args(parallel_args)
 
     assert (args.sglang_tp_size, args.sglang_dp_size, args.sglang_pp_size, args.sglang_ep_size) == expected
