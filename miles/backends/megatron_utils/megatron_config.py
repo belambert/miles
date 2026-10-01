@@ -10,6 +10,7 @@ from typing import Any, ClassVar, Literal
 import pydantic
 import yaml
 
+from miles.utils.args.custom_function import resolve_custom_function_overrides
 from miles.utils.args.enhanced_argparse_namespace import EnhancedArgparseNamespace, SerializableConfigDict
 from miles.utils.file_arg_utils import resolve_file_arg
 from miles.utils.megatron_args_utils import compute_trainer_num_cells
@@ -362,7 +363,8 @@ def compute_trainer_args(args: Namespace, trainer: MegatronTrainerConfig) -> Nam
     ans.trainer_role = trainer.role
     ans.trainer_actor_index = trainer.actor_index
 
-    for key, value in trainer.overrides.items():
+    overrides = resolve_custom_function_overrides(trainer.overrides, args=args)
+    for key, value in overrides.items():
         assert hasattr(ans, key), (  # config-access-exempt: attribute selected at runtime from key
             f"--megatron-config trainer {trainer.trainer_id!r} overrides {key!r}, which this run's argument "
             f"parser does not know"

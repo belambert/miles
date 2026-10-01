@@ -1,5 +1,6 @@
 import argparse
-from collections.abc import Callable
+import copy
+from collections.abc import Callable, Collection
 from dataclasses import dataclass
 from typing import Any
 
@@ -72,6 +73,19 @@ def resolve_custom_function_configs(args: argparse.Namespace, *, config_class: t
             delattr(args, name)
 
 
+def resolve_custom_function_overrides(overrides: dict[str, Any], *, args: argparse.Namespace) -> dict[str, Any]:
+    resolved = overrides.copy()
+    values = copy.deepcopy(argparse.Namespace(**(vars(args) | overrides)))
+    for info in _compute_custom_function_field_infos(argparse.Namespace(**overrides), field_names=overrides.keys()):
+        original = vars(args)[info.name]
+        resolved[info.name] = (
+            original
+            if isinstance(original, CustomFunctionConfig) and original.path == info.path
+            else _resolve_custom_function_config(info=info, args=values)
+        )
+    return resolved
+
+
 @dataclass(frozen=True)
 class _CustomFunctionFieldInfo:
     name: str
@@ -94,7 +108,11 @@ def _resolve_custom_function_config(
 
 
 def _compute_custom_function_field_infos(
-    args: argparse.Namespace, *, partial: bool = False, config_class: type[BaseConfig] | None = None
+    args: argparse.Namespace,
+    *,
+    partial: bool = False,
+    config_class: type[BaseConfig] | None = None,
+    field_names: Collection[str] | None = None,
 ) -> list[_CustomFunctionFieldInfo]:
     from miles.utils.args.runtime import AllConfig
 
@@ -105,11 +123,13 @@ def _compute_custom_function_field_infos(
         )  # config-access-exempt: schema-selected field
         for name, field in (config_class or AllConfig).model_fields.items()
         if field.annotation in {CustomFunctionConfig, CustomFunctionConfig | None}
+        and (field_names is None or name in field_names)
     ]
     infos = []
     for name, path in paths:
         if path is None:
             continue
+        assert isinstance(path, str), f"Custom function field {name!r} must be a path string"
         try:
             fn = load_function(path)
         except (ModuleNotFoundError, ValueError):
