@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from miles.backends.megatron_utils.megatron_config import MegatronConfig
-from miles.ray.placement_group import create_trainer_handles, create_training_model, take_over_trainers
+from miles.ray.placement_group import create_training_model, take_over_trainers
 from miles.ray.rollout.rollout_executor import compute_rollout_checkpoint_dir
 from miles.ray.specs.train import compute_trainer_configs
 from miles.ray.train.init_request import TrainerControllerInitRequest
@@ -11,7 +11,6 @@ from miles.utils.args.runtime import OrchestratorConfig
 from miles.utils.arguments import validate_async_off_policy_correction
 from miles.utils.multi_policy.checkpoint_state import MultiPolicyCheckpointState
 from miles.utils.tracking_utils.tracking import define_step_key_metric_group
-from miles.utils.workers.backend_capability.base import BackendCapability
 from miles.utils.workers.worker_handle import BaseWorkerHandle
 
 logger = logging.getLogger(__name__)
@@ -25,10 +24,9 @@ class TrainerInfo:
 
 
 async def create_trainers(
-    args: OrchestratorConfig, *, rollout_executor: BaseWorkerHandle, capability: BackendCapability
+    args: OrchestratorConfig, *, rollout_executor: BaseWorkerHandle, handles: dict[str, BaseWorkerHandle]
 ) -> dict[str, TrainerInfo]:
     trainer_configs = compute_trainer_configs(args)
-    handles = create_trainer_handles(args, trainer_configs=trainer_configs, capability=capability)
     resumed = await take_over_trainers(args, handles=handles)
 
     trainers: dict[str, TrainerInfo] = {}
