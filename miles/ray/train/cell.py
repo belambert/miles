@@ -10,6 +10,7 @@ from miles.ray.train.cell_state import (
     StateAllocatedErrored,
     StateAllocatedUninitialized,
 )
+from miles.utils.async_utils import CancellableTasks
 from miles.utils.ft_utils.api_server.models import CellStatus
 from miles.utils.ft_utils.health_checker import BaseHealthChecker
 from miles.utils.ft_utils.indep_dp import IndepDPInfo
@@ -48,6 +49,8 @@ class TrainerCell:
         self.with_ref = with_ref
         self.with_opd_teacher = with_opd_teacher
         self.health_checker = health_checker
+        self._disposed = False
+        self._cancellabel_tasks = CancellableTasks()
 
         (worker_infos,) = provider.get_worker_infos(cell_ids=[cell_id])
         self._master_addr: HostAndPort = worker_infos[0].self_addrs[MASTER_PORT_NAME]
@@ -85,6 +88,11 @@ class TrainerCell:
         self.health_checker.start()
         await asyncio.sleep(0)
         return results
+
+    def dispose(self) -> None:
+        self._disposed = True
+        self.health_checker.stop()
+        self._cancellabel_tasks.cancel()
 
     async def load_state(self) -> list:
         return await self.execute("load_state")
@@ -235,15 +243,17 @@ class TrainerCell:
         kill_on_failure: bool = True,
         timeout: float | None = None,
     ) -> list:
+        if self._disposed:
+            raise WorkerUnreachableError(f"Cell {self.cell_id} was removed")
         handles = self._get_worker_handles()
         log_structured(
             logger.info, tag="ft", op="execute", phase="start", cell=self.cell_id, fn=fn_name, n_actors=len(handles)
         )
         start = time.monotonic()
         try:
-            result = await asyncio.wait_for(
-                asyncio.gather(
-                    *[getattr(handle, fn_name)(**compute_kwargs(i)) for i, handle in enumerate(handles)]
+            result = await self._cancellabel_tasks.gather(
+                (
+                    getattr(handle, fn_name)(**compute_kwargs(i)) for i, handle in enumerate(handles)
                 ),  # config-access-exempt: attribute selected at runtime from fn_name
                 timeout=timeout,
             )
@@ -258,6 +268,10 @@ class TrainerCell:
                 elapsed_s=round(time.monotonic() - start, 1),
             )
             return result
+        except asyncio.CancelledError:
+            if self._disposed:
+                raise WorkerUnreachableError(f"Cell {self.cell_id} was removed") from None
+            raise
         except Exception:
             log_structured(
                 logger.error,
@@ -269,7 +283,7 @@ class TrainerCell:
                 elapsed_s=round(time.monotonic() - start, 1),
                 exc_info=True,
             )
-            if kill_on_failure:
+            if kill_on_failure and not self._disposed:
                 await self.mark_errored_and_kill()
             raise
 
