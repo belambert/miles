@@ -104,7 +104,7 @@ def _make_test_args(**overrides):
 
 
 def _checkpoint_args(tmp_path, **overrides):
-    return _make_test_args(save=str(tmp_path), load=str(tmp_path), **overrides)
+    return _make_test_args(save=str(tmp_path), **overrides)
 
 
 @pytest.mark.asyncio
@@ -348,7 +348,7 @@ class TestCheckpointing:
         executor.data_source = MagicMock()
 
         await executor.save(rollout_id=7)
-        await executor.load(rollout_id=7)
+        await executor.load(rollout_id=7, load=str(tmp_path))
 
         assert calls == [
             ("train", "save"),
@@ -403,7 +403,7 @@ class TestCheckpointing:
         executor.data_source = MagicMock()
 
         await executor.save(rollout_id=3)
-        await executor.load(rollout_id=3)
+        await executor.load(rollout_id=3, load=str(tmp_path))
 
         executor.data_source.save.assert_called_once()
         executor.data_source.load.assert_called_once()
@@ -429,7 +429,7 @@ class TestCheckpointing:
         executor.data_source = MagicMock()
 
         await executor.save(rollout_id=1)
-        await executor.load(rollout_id=1)
+        await executor.load(rollout_id=1, load=str(tmp_path))
 
         executor.data_source.load.assert_called_once()
 
@@ -902,7 +902,7 @@ class TestCheckpointWithoutARolloutFunction:
         executor.data_source = MagicMock()
 
         await executor.save(3)
-        await executor.load(3)
+        await executor.load(3, load=str(tmp_path))
 
         assert executor.generate_rollout is None
         executor.data_source.save.assert_called_once()
@@ -919,12 +919,12 @@ class TestCheckpointWithoutARolloutFunction:
         monkeypatch.delenv("MILES_USE_LEGACY_ROLLOUT_V1", raising=False)
         executor = await _make_executor(
             _make_test_args(
-                save=str(tmp_path), load=None, load_debug_rollout_data="/nonexistent/rollout_{rollout_id}.pt"
+                save=str(tmp_path), load_debug_rollout_data="/nonexistent/rollout_{rollout_id}.pt"
             )
         )
         executor.data_source = MagicMock()
 
-        await executor.load(0)
+        await executor.load(0, load=None)
 
         executor.data_source.load.assert_not_called()
 
@@ -971,7 +971,7 @@ class TestCheckpointWithoutARolloutFunction:
         executor.data_source = MagicMock()
 
         await executor.save(rollout_id=2)
-        await executor.load(rollout_id=2)
+        await executor.load(rollout_id=2, load=str(tmp_path))
 
         assert calls == [("eval", "save"), ("eval", "load")]
         executor.data_source.save.assert_called_once()
@@ -998,7 +998,7 @@ class TestCheckpointOfADistinctEvalRolloutFunction:
         executor.eval_generate_rollout = MagicMock()
 
         await executor.save(7)
-        await executor.load(7)
+        await executor.load(7, load=str(tmp_path))
 
         executor.generate_rollout.save.assert_called_once()
         executor.generate_rollout.load.assert_called_once()
@@ -1014,7 +1014,7 @@ class TestCheckpointOfADistinctEvalRolloutFunction:
         executor.eval_generate_rollout = shared
 
         await executor.save(7)
-        await executor.load(7)
+        await executor.load(7, load=str(tmp_path))
 
         shared.save.assert_called_once()
         shared.load.assert_called_once()
@@ -1030,7 +1030,7 @@ class TestCheckpointOfADistinctEvalRolloutFunction:
         executor.eval_generate_rollout = _AlwaysEqualRolloutFn("eval", calls)
 
         await executor.save(4)
-        await executor.load(4)
+        await executor.load(4, load=str(tmp_path))
 
         assert calls == [
             ("train", "save"),
@@ -1043,13 +1043,13 @@ class TestCheckpointOfADistinctEvalRolloutFunction:
         self, ray_local_mode, patch_low_level, tmp_path
     ):
         """A run without --load names no checkpoint directory, so neither instance has anything to restore."""
-        executor = await _make_executor(_make_test_args(save=str(tmp_path), load=None))
+        executor = await _make_executor(_make_test_args(save=str(tmp_path)))
         executor.data_source = MagicMock()
         calls: list[tuple[str, str]] = []
         executor.generate_rollout = _RecordingRolloutFn("train", calls)
         executor.eval_generate_rollout = _RecordingRolloutFn("eval", calls)
 
-        await executor.load(0)
+        await executor.load(0, load=None)
 
         assert calls == []
 
@@ -1065,7 +1065,7 @@ class TestCheckpointOfADistinctEvalRolloutFunction:
         executor.eval_generate_rollout = _RecordingRolloutFn("eval", calls)
 
         await executor.save(2)
-        await executor.load(2)
+        await executor.load(2, load=str(tmp_path))
 
         assert calls == []
         executor.data_source.save.assert_called_once()

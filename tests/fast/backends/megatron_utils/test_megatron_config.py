@@ -7,10 +7,11 @@ from types import SimpleNamespace
 import pydantic
 import pytest
 import yaml
-from tests.fast.fixtures.args_fixtures import parser_defaults
+from tests.fast.fixtures.args_fixtures import ConfigNamespace, parser_defaults
 from tests.fast.fixtures.megatron_config_fixtures import encode_megatron_config
 
 from miles.backends.megatron_utils import megatron_config as megatron_config_module
+from miles.backends.megatron_utils.checkpoint_request import MegatronCkptLoadConfig
 from miles.backends.megatron_utils.megatron_config import (
     MODEL_DEFINITION_ARGS,
     PER_POLICY_ARGS,
@@ -22,6 +23,7 @@ from miles.backends.megatron_utils.megatron_config import (
     resolve_args_checkpoint_load,
     resolve_megatron_config,
 )
+from miles.utils.args.trainer_utils import compute_trainer_ckpt_load_config
 from miles.utils.external_utils.model_args_utils import load_model_args
 from miles.utils.workers.naming import TRAINER_ID_MAX_LENGTH
 
@@ -34,6 +36,12 @@ def _write_yaml(data: dict, tmp_path) -> str:
 
 def _model_args(args: Namespace, *, model_id: str) -> Namespace:
     return compute_trainer_args(args, resolve_megatron_config(args, base_args={}).get(model_id))
+
+
+def _model_ckpt_load_config(args: Namespace, *, model_id: str) -> MegatronCkptLoadConfig:
+    config = resolve_megatron_config(args, base_args={})
+    inputs = ConfigNamespace(**(vars(args) | {"raw_megatron": config}))
+    return compute_trainer_ckpt_load_config(inputs, config.get(model_id))
 
 
 def _make_args(megatron_config: str | None = None, **overrides) -> Namespace:
@@ -635,8 +643,10 @@ class TestPerPolicyCheckpointResolution:
         model_args = _model_args(args, model_id="a")
 
         assert model_args.save == "/ckpt/run/trainers/a-actor"
-        assert model_args.load == "/models/ref"
-        assert (model_args.finetune, model_args.start_rollout_id) == (True, 0)
+        request = _model_ckpt_load_config(args, model_id="a")
+        assert model_args.load == "/ckpt/run/trainers/a-actor"
+        assert request.load == "/models/ref"
+        assert (request.finetune, request.resume_from_ckpt) == (True, False)
 
     def test_a_policy_with_its_own_tracker_resumes_from_its_own_directory(self, tmp_path):
         """The tracker of a policy lives under its own subdirectory, so the root never looks resumable."""
@@ -665,8 +675,8 @@ class TestPerPolicyCheckpointResolution:
         )
         args = _make_args(path, megatron_to_hf_mode="bridge", save="/ckpt/run", load="/ckpt/run")
 
-        assert _model_args(args, model_id="a").load == "/models/a"
-        assert _model_args(args, model_id="b").load == "/models/b"
+        assert _model_ckpt_load_config(args, model_id="a").load == "/models/a"
+        assert _model_ckpt_load_config(args, model_id="b").load == "/models/b"
 
 
 class TestPerPolicyDerivedDefaults:

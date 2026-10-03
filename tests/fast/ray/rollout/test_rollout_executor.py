@@ -2,6 +2,7 @@ import asyncio
 from argparse import Namespace
 from collections import defaultdict
 from pathlib import Path
+from typing import Any
 
 import pytest
 import torch
@@ -39,6 +40,11 @@ from miles.utils.audit_utils.sample_ownership.recorder import SampleOwnershipRec
 from miles.utils.object_store import _MooncakeStoreObjectRef
 from miles.utils.types import Sample
 from miles.utils.workers.worker_spec import HostAndPort
+
+
+def _make_runtime_args(**overrides: Any) -> Namespace:
+    values = vars(make_args(**overrides))
+    return Namespace(**{key: value for key, value in values.items() if key not in {"load", "requested_load"}})
 
 
 class FakeInferenceController:
@@ -98,7 +104,7 @@ class TestDispose:
             enable_event_analyzer=False,
         )
         executor._metric_checker = None
-        executor._output_snapshotter = _RolloutExecutorOutputSnapshotter(args=make_args())
+        executor._output_snapshotter = _RolloutExecutorOutputSnapshotter(args=_make_runtime_args())
         executor._output_snapshotter.capture(trainer_model_id=None, rollout_id=6, data=[Sample(index=10)], metadata={})
         event_logger = EventLogger(log_dir=tmp_path, source=SimpleProcessIdentity(component="rollout_executor"))
         event_logger.log(
@@ -295,7 +301,7 @@ class _FakeObjectStore:
 
 def _make_executor(tmp_path: Path, rollout_fn: _CountingRolloutFn) -> RolloutExecutor:
     executor = RolloutExecutor.__new__(RolloutExecutor)
-    executor.args = make_args(load=str(tmp_path), save=str(tmp_path))
+    executor.args = _make_runtime_args(load=str(tmp_path), save=str(tmp_path))
     executor.use_legacy_rollout_v1 = True
     executor.generate_rollout = rollout_fn
     executor.eval_generate_rollout = rollout_fn
@@ -323,7 +329,7 @@ class TestOutputSnapshotReplay:
     ) -> None:
         """A checkpoint restores issued history without repeating terminal drops from any saved stage."""
         event_dir = tmp_path / "active-events"
-        args = make_args(
+        args = _make_runtime_args(
             load=str(tmp_path),
             requested_load=str(tmp_path),
             save=str(tmp_path),
@@ -371,7 +377,7 @@ class TestOutputSnapshotReplay:
             resumed_fn = FailingRolloutFn(RolloutFnConstructorInput(args=args, data_source=_FakeDataSource(tmp_path)))
             resumed = _make_executor(tmp_path, _CountingRolloutFn())
             self._configure_async_executor(resumed, args=args, rollout_fn=resumed_fn)
-            await resumed.load(0)
+            await resumed.load(0, load=str(tmp_path))
             await resumed.get(rollout_id=1)
         finally:
             set_event_logger(None)
@@ -408,7 +414,7 @@ class TestOutputSnapshotReplay:
         executor._output_snapshotter.capture(trainer_model_id=None, rollout_id=3, data=[Sample(index=7)], metadata={})
         await executor.save(2)
         restored = _make_executor(tmp_path, _CountingRolloutFn())
-        await restored.load(2)
+        await restored.load(2, load=str(tmp_path))
 
         caller_loop = asyncio.get_running_loop()
 
@@ -422,7 +428,7 @@ class TestOutputSnapshotReplay:
         assert (await restored.get(rollout_id=3)).sample_indices == [7]
         await restored.save(2)
         resumed_again = _make_executor(tmp_path, _CountingRolloutFn())
-        await resumed_again.load(2)
+        await resumed_again.load(2, load=str(tmp_path))
         assert (await resumed_again.get(rollout_id=3)).sample_indices == [7]
 
     async def test_a_generated_batch_is_captured_before_a_concurrent_save_runs(
@@ -489,7 +495,7 @@ class TestSampleOwnershipRolloutId:
         """The data source issues samples mid-get, so the recorder must stamp the rollout being served."""
         event_dir = tmp_path / "events"
         executor = _make_executor(tmp_path, _CountingRolloutFn())
-        executor.args = make_args(
+        executor.args = _make_runtime_args(
             load=str(tmp_path),
             save=str(tmp_path),
             save_debug_event_data=str(event_dir),
@@ -599,14 +605,14 @@ class TestOneDirectoryPerRolloutCheckpoint:
         executor = _make_executor(tmp_path, _CountingRolloutFn())
 
         with pytest.raises(AssertionError, match="cannot resume that state"):
-            await executor.load(5)
+            await executor.load(5, load=str(tmp_path))
 
     async def test_a_step_that_was_never_trained_is_refused(self, tmp_path: Path) -> None:
         """A run whose trainer starts from scratch has no rollout state, and must not be asked for any."""
         executor = _make_executor(tmp_path, _CountingRolloutFn())
 
         with pytest.raises(AssertionError, match="is not a trained step"):
-            await executor.load(-1)
+            await executor.load(-1, load=str(tmp_path))
 
         assert executor.data_source.loaded == []
 
@@ -617,7 +623,7 @@ class TestOneDirectoryPerRolloutCheckpoint:
         (compute_rollout_checkpoint_dir(tmp_path, rollout_id=5) / "executor" / "state.pt").unlink()
 
         with pytest.raises(AssertionError, match="executor/state.pt"):
-            await executor.load(5)
+            await executor.load(5, load=str(tmp_path))
 
     async def test_a_custom_data_source_does_not_imply_the_builtin_state_file(self, tmp_path: Path) -> None:
         """A custom source keeps its own checkpoint contract instead of writing the built-in cursor file."""
@@ -625,7 +631,7 @@ class TestOneDirectoryPerRolloutCheckpoint:
         executor.data_source = _CustomDataSource()
 
         await executor.save(5)
-        await executor.load(5)
+        await executor.load(5, load=str(tmp_path))
 
         assert not (compute_rollout_checkpoint_dir(tmp_path, rollout_id=5) / "data_source").exists()
 
