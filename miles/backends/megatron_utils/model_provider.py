@@ -359,7 +359,7 @@ def get_model_provider_func(
     return model_provider
 
 
-def _maybe_freeze_native_dsa_indexer(args: argparse.Namespace, model: GPTModel) -> None:
+def _maybe_freeze_native_dsa_indexer(args: TrainerConfig, model: GPTModel) -> None:
     if args.dsa_impl == "megatron" and model.config.dsa_indexer_loss_coeff == 0:
         # Native DSA runs its indexer under no_grad without the auxiliary objective.
         # Exclude these unused parameters from DDP and optimizer weight decay.
