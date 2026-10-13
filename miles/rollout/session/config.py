@@ -63,5 +63,5 @@ def compute_session_server_config(
         session_sample_postprocessor_path=args.session_sample_postprocessor_path,
         rollout_top_logprobs_num=args.rollout_top_logprobs_num,
         rollout_sampling_logprobs_mode=args.rollout_sampling_logprobs_mode,
-        rollout_temperature=getattr(args, "rollout_temperature", 1.0),
+        rollout_temperature=getattr(args, "rollout_temperature", 1.0),  # config-access-exempt: legacy session inputs omit rollout_temperature
     )
