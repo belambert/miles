@@ -47,6 +47,7 @@ from typing import TYPE_CHECKING, NamedTuple
 import torch
 from megatron.core.fp8_utils import is_float8tensor
 
+
 if TYPE_CHECKING:
     from megatron.core.optimizer.distrib_optimizer import DistributedOptimizer
 

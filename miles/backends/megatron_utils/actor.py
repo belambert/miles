@@ -15,7 +15,6 @@ from miles.backends.megatron_utils.lora.utils import is_lora_enabled, lora_rollo
 from miles.backends.megatron_utils.megatron_to_hf import converter_model_name
 from miles.backends.megatron_utils.rematerialize_utils import build_main_cast_context
 from miles.backends.megatron_utils.update_weight.hf_weight_iterator import get_hf_weight_iterator
-from miles.backends.training_utils.checkpoint.tracker import read_checkpoint_tracker_iteration
 from miles.backends.training_utils.data.rollout import (
     DataIterator,
     get_data_iterator,

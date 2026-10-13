@@ -3,8 +3,8 @@ from typing import Annotated, Any
 from pydantic import Discriminator, Tag
 
 from miles.backends.fsdp_utils.config import FsdpArgsNamespace
-from miles.backends.torchtitan_utils.args_namespace import TorchtitanArgsNamespace
 from miles.backends.megatron_utils.megatron_config import MegatronArgsNamespace
+from miles.backends.torchtitan_utils.args_namespace import TorchtitanArgsNamespace
 from miles.utils.args.schema import BaseConfig
 
 

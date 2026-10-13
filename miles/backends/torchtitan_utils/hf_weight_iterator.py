@@ -24,7 +24,9 @@ class TitanHfWeightIterator(HfWeightIteratorBase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._engine_dtypes = _checkpoint_dtypes(self.args.hf_checkpoint)
-        self._q_lora_rank = getattr(load_hf_config(self.args.hf_checkpoint), "q_lora_rank", None) or None  # config-access-exempt: HF models without query LoRA omit q_lora_rank
+        self._q_lora_rank = (
+            getattr(load_hf_config(self.args.hf_checkpoint), "q_lora_rank", None) or None  # config-access-exempt: HF models without query LoRA omit q_lora_rank
+        )
 
     def _iter_hf_param_units(self, weights, *, materialize):
         for name, tensor in hf_weights(self.model, complete_across_pp=self.placement.gather_pp):
@@ -142,7 +144,9 @@ class _StageLayout:
             if self.my_rank in holders:
                 tensor = gather_full_param(local[name]).contiguous()
             else:
-                tensor = torch.empty(shape, dtype=getattr(torch, dtype.split(".")[-1]), device=self.device)  # config-access-exempt: torch dtype name comes from the broadcast tensor metadata
+                tensor = torch.empty(
+                    shape, dtype=getattr(torch, dtype.split(".")[-1]), device=self.device  # config-access-exempt: torch dtype name comes from the broadcast tensor metadata
+                )
             dist.broadcast(tensor, src=holders[0], group=self.broadcast_group)
             yield name, tensor
             del tensor

@@ -11,7 +11,6 @@ from typing import Any
 import yaml
 
 from miles.backends.fsdp_utils.config import FsdpArgsNamespace
-from miles.backends.torchtitan_utils.args_namespace import TorchtitanArgsNamespace
 from miles.backends.megatron_utils.megatron_config import (
     ACTOR_ROLE,
     CRITIC_ROLE,
@@ -24,6 +23,7 @@ from miles.backends.sglang_utils.arguments import collect_eval_sglang_overrides
 from miles.backends.sglang_utils.arguments import validate_args as sglang_validate_args
 from miles.backends.sglang_utils.sglang_config import SglangConfig
 from miles.backends.sglang_utils.sglang_scaling_config import SglangScalingConfig
+from miles.backends.torchtitan_utils.args_namespace import TorchtitanArgsNamespace
 from miles.dashboard.args import validate_dashboard_args
 from miles.ray.specs.train import external_trainer_controller_addrs
 from miles.rollout.checkpoint_eval import is_checkpoint_eval_fn

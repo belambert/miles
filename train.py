@@ -48,7 +48,12 @@ async def train(startup_info: OrchestratorStartupInfo, *, disposer: Disposer):
     disposer.add(critic_model, actor_model)
 
     disposer.add(
-        maybe_start_api_server(args, trainer_models={"actor": actor_model}, inference_controller=inference_controller, capability=capability)
+        maybe_start_api_server(
+            args,
+            trainer_models={"actor": actor_model},
+            inference_controller=inference_controller,
+            capability=capability,
+        )
     )
     maybe_start_mini_ft_controller(args)
 

@@ -40,6 +40,7 @@ from megatron.core.models.gpt.gpt_model import GPTModel
 from megatron.core.transformer import ModuleSpec
 from megatron.core.transformer.attention import SelfAttention
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -172,7 +173,9 @@ class MiMoV2Bridge(MegatronModelBridge):
 
     def provider_bridge(self, hf_pretrained) -> MiMoV2ModelProvider:
         hf = hf_pretrained.config
-        if getattr(hf, "attention_projection_layout", "split") != "split" or getattr(hf, "quantization_config", None):  # config-access-exempt: unquantized HF checkpoints omit quantization_config; HF MiMo checkpoints may omit the projection layout marker
+        if getattr(hf, "attention_projection_layout", "split") != "split" or getattr(  # config-access-exempt: unquantized HF checkpoints omit quantization_config; HF MiMo checkpoints may omit the projection layout marker
+            hf, "quantization_config", None
+        ):  # config-access-exempt: unquantized HF checkpoints omit quantization_config; HF MiMo checkpoints may omit the projection layout marker
             raise ValueError(
                 "MiMo-V2 bridge reads BF16 split q/k/v checkpoints; convert the official checkpoint "
                 "with tools/convert_mimo_v2_to_bf16.py first"
@@ -182,7 +185,9 @@ class MiMoV2Bridge(MegatronModelBridge):
             ("swa_head_dim", "head_dim"),
             ("swa_v_head_dim", "v_head_dim"),
         ):
-            assert getattr(hf, swa_key) == getattr(hf, full_key), f"{swa_key} must equal {full_key}"  # config-access-exempt: HF sliding-window field name is selected from the explicit compatibility pairs; HF full-attention field name is selected from the explicit compatibility pairs
+            assert getattr(hf, swa_key) == getattr(  # config-access-exempt: HF sliding-window field name is selected from the explicit compatibility pairs; HF full-attention field name is selected from the explicit compatibility pairs
+                hf, full_key
+            ), f"{swa_key} must equal {full_key}"  # config-access-exempt: HF sliding-window field name is selected from the explicit compatibility pairs; HF full-attention field name is selected from the explicit compatibility pairs
 
         provider = super().provider_bridge(hf_pretrained)
         pattern = [int(p) for p in hf.hybrid_layer_pattern]

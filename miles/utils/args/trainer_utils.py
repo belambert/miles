@@ -1,13 +1,13 @@
 from argparse import Namespace
 
 from miles.backends.fsdp_utils.config import FsdpArgsNamespace
-from miles.backends.torchtitan_utils.args_namespace import TorchtitanArgsNamespace
 from miles.backends.megatron_utils.megatron_config import (
     CRITIC_ROLE,
     MegatronArgsNamespace,
     MegatronTrainerConfig,
     compute_trainer_args,
 )
+from miles.backends.torchtitan_utils.args_namespace import TorchtitanArgsNamespace
 from miles.utils.args.configs.backend_fields import TrainerBackendTraitConfig
 from miles.utils.args.configs.scaling import ScalingConfig
 from miles.utils.args.runtime import AllConfig, TrainerConfig
