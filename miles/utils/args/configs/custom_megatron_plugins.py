@@ -10,7 +10,6 @@ class CustomMegatronPluginsConfig(BaseConfig):
     This is a placeholder for any additional arguments that might be needed.
     """
 
-    freeze_indexer: A[bool, Arg()] = False
     custom_megatron_init_path: A[
         CustomFunctionConfig | None,
         Arg(),
