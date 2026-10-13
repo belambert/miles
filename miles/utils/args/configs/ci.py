@@ -5,6 +5,7 @@ class CiConfig(BaseConfig):
     ci_disable_config_snapshot: A[bool, Arg()] = False
     config_snapshot_name: A[str | None, Arg()] = None
     ci_enable_metrics_capture: bool
+    ci_event_root: A[str | None, Arg()] = None
 
     ci_test: A[bool, Arg()] = False
     ci_tito_special_token_count_threshold: A[
