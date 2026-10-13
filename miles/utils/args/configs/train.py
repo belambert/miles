@@ -23,10 +23,6 @@ class TrainConfig(BaseConfig):
             ),
         ),
     ] = "fla"
-    miles_dsa_topk_backend: A[
-        str,
-        Arg(choices=["torch", "flashinfer"], help="Top-k backend for Miles DSA indexer."),
-    ] = "torch"
     true_on_policy_mode: A[bool, Arg(help="Whether to enable true-on-policy mode.")] = False
     train_env_vars: A[
         Any,

@@ -21,7 +21,11 @@ from miles.backends.megatron_utils.model_provider import get_model_provider_func
 from miles.backends.training_utils.model_companion import ModelCompanionInstallationUtils
 from miles.utils.arguments import LINEAR_ATTENTION_BACKENDS
 from miles.utils.args.component_trainer import TrainerOnlyConfig
-from miles.utils.args.configs.custom_megatron_plugins import CustomMegatronPluginsConfig, Dsv4MegatronPluginsConfig
+from miles.utils.args.configs.custom_megatron_plugins import (
+    CustomMegatronPluginsConfig,
+    DsaMegatronPluginsConfig,
+    Dsv4MegatronPluginsConfig,
+)
 from miles.utils.args.configs.debug import DebugConfig
 from miles.utils.args.configs.mtp_training import MtpTrainingConfig
 from miles.utils.args.configs.train import TrainConfig
@@ -45,6 +49,7 @@ class _ConversionConfig(
     DebugConfig,
     CustomMegatronPluginsConfig,
     Dsv4MegatronPluginsConfig,
+    DsaMegatronPluginsConfig,
     MtpTrainingConfig,
 ):
     trainer_id: Literal["actor"] = "actor"

@@ -1,3 +1,5 @@
+from argparse import ArgumentParser
+
 from miles.utils.args.custom_function import CustomFunctionConfig
 from miles.utils.args.schema import A, Arg, BaseConfig
 
@@ -38,3 +40,13 @@ class Dsv4MegatronPluginsConfig(BaseConfig):
             ),
         ),
     ] = "megatron"
+
+
+class DsaMegatronPluginsConfig(BaseConfig):
+    dsa_impl: A[str, Arg(choices=["miles", "megatron"])] = "miles"
+    miles_dsa_topk_backend: A[str, Arg(choices=["torch", "flashinfer"])] = "torch"
+
+    @classmethod
+    def add_arguments(cls, parser: ArgumentParser) -> None:
+        super().add_arguments(parser=parser)
+        parser.set_defaults(cp_comm_type=None)
