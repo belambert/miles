@@ -58,6 +58,7 @@ async def create_trainers(
         _assert_global_rollout_state_exists(args, leader_rollout_id=leader_rollout_id)
         await rollout_executor.load(
             leader_rollout_id,
+            load=args.load,
             completed_rollout_ids={model_id: trainer.start_rollout_id - 1 for model_id, trainer in trainers.items()},
         )
 

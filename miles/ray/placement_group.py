@@ -275,7 +275,7 @@ async def create_training_models(
 
     await rollout_executor.set_train_parallel_config(await actor_info.handle.get_train_parallel_config())
     if args.start_rollout_id > 0:
-        await rollout_executor.load(args.start_rollout_id - 1)
+        await rollout_executor.load(args.start_rollout_id - 1, load=args.load)
 
     return actor_info.handle, critic_info.handle if critic_info is not None else None
 
