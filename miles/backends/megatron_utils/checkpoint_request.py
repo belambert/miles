@@ -30,6 +30,7 @@ class MegatronCkptLoadConfig(FrozenStrictBaseModel):
     @contextmanager
     def apply(self, args: MegatronArgsNamespace) -> Iterator[None]:
         assert CHECKPOINT_LOAD_FIELDS.isdisjoint(vars(args)), "Checkpoint load fields must be runtime-only"
+        assert "requested_load" not in vars(args), "requested_load belongs to the orchestrator"
         with args.mutable():
             for name in CHECKPOINT_LOAD_FIELDS:
                 setattr(args, name, vars(self)[name])
@@ -39,3 +40,4 @@ class MegatronCkptLoadConfig(FrozenStrictBaseModel):
                 for name in CHECKPOINT_LOAD_FIELDS:
                     delattr(args, name)
                 assert CHECKPOINT_LOAD_FIELDS.isdisjoint(vars(args)), "Checkpoint load fields must be runtime-only"
+                assert "requested_load" not in vars(args), "requested_load belongs to the orchestrator"
