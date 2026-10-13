@@ -12,7 +12,7 @@ def start_launch(
     launching: Awaitable[None], *, event_log: EventLog, request_id: str, chain: LauncherChain
 ) -> asyncio.Task[LaunchOutcome]:
     launcher = asyncio.create_task(
-        note_launch_outcome(event_log=event_log, request_id=request_id, launching=launching)
+        note_launch_outcome(event_log=event_log, request_id=request_id, launching=launching, accept_replaced=True)
     )
     chain.put_nowait(launcher)
     return launcher
