@@ -1,6 +1,6 @@
 import argparse
 import json
-from typing import Any
+from typing import Any, Literal
 
 from miles.utils.args.custom_function import CustomFunctionConfig
 from miles.utils.args.schema import A, Arg, BaseConfig
@@ -11,6 +11,8 @@ from miles.utils.object_store import ObjectStoreBackend
 class RolloutRelatedConfig(BaseConfig):
     custom_agent_function_path: A[CustomFunctionConfig | None, Arg()] = None
     use_sampling_support_replay: bool
+    rollout_sampling_logprobs_mode: Literal["selected", "support"]
+    rollout_top_logprobs_num: A[int, Arg()] = 0
 
     hf_checkpoint: A[
         str | None,
