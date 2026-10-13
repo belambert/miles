@@ -328,6 +328,11 @@ class FSDPTrainRayActor(TorchNativeTrainRayActor):
     def _step_runner(self) -> LinearStepRunner:
         return LinearStepRunner(self._forward, self._zero_grad, self._apply_step)
 
+    def _before_train(self) -> None:
+        if not self._config_snapshot_train_recorded:
+            ConfigSnapshotDumper.dump(stage="train_first_step", config={"args": self.args, "role": self.role})
+            self._config_snapshot_train_recorded = True
+
     def _after_rollout(self, rollout_id: int, rollout_data) -> None:
         if self.args.save_debug_train_data is not None:
             train_dump.save_debug_train_data(self.args, rollout_id=rollout_id, rollout_data=rollout_data)
