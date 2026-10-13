@@ -48,4 +48,5 @@ class DsaMegatronPluginsConfig(BaseConfig):
     @classmethod
     def add_arguments(cls, parser: ArgumentParser) -> None:
         super().add_arguments(parser=parser)
-        parser.set_defaults(cp_comm_type=None)
+        if any(action.dest == "cp_comm_type" for action in parser._actions):
+            parser.set_defaults(cp_comm_type=None)

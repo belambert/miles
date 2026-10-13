@@ -10,7 +10,7 @@ class TrainConfig(BaseConfig):
     trainer_model_id: str | None
     entry: Literal["train", "serve"] = "train"
 
-    train_backend: A[str, Arg(choices=["megatron", "fsdp"], help="The backend for training.")] = "megatron"
+    train_backend: A[str, Arg(choices=["megatron", "fsdp", "torchtitan"], help="The backend for training.")] = "megatron"
     qkv_format: A[str, Arg(choices=["thd", "bshd"], help="The qkv layout.")] = "thd"
     linear_attention_backend: A[
         str,

@@ -1,6 +1,7 @@
 import argparse
 
 from miles.backends.fsdp_utils.config import FsdpArgsNamespace
+from miles.backends.torchtitan_utils.args_namespace import TorchtitanArgsNamespace
 from miles.backends.megatron_utils.megatron_config import MegatronConfig
 from miles.utils.args.schema import A, Arg, BaseConfig, reset_arg
 
@@ -9,6 +10,7 @@ from miles.utils.args.schema import A, Arg, BaseConfig, reset_arg
 class RawTrainerBackendConfig(BaseConfig):
     raw_megatron: MegatronConfig
     raw_fsdp: FsdpArgsNamespace | None
+    raw_torchtitan: TorchtitanArgsNamespace | None
 
 
 class TrainerBackendTraitConfig(BaseConfig):

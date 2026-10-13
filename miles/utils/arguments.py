@@ -11,6 +11,7 @@ from typing import Any
 import yaml
 
 from miles.backends.fsdp_utils.config import FsdpArgsNamespace
+from miles.backends.torchtitan_utils.args_namespace import TorchtitanArgsNamespace
 from miles.backends.megatron_utils.megatron_config import (
     ACTOR_ROLE,
     CRITIC_ROLE,
@@ -282,7 +283,7 @@ def parse_args_and_get_parser(
         if backend == "torchtitan":
             from miles.backends.torchtitan_utils.arguments import load_torchtitan_args
 
-            args = load_torchtitan_args(extra_args_provider=add_miles_arguments)
+            args = load_torchtitan_args(extra_args_provider=add_miles_arguments_and_capture_parser)
         else:
             from miles.backends.fsdp_utils.arguments import load_fsdp_args
 
@@ -337,6 +338,8 @@ def parse_args_and_get_parser(
 
         validate_hybrid_shard_args(args)
         validate_kernel_backend_args(args)
+
+    if backend != "megatron":
         training_backend_arg_names.update(
             {
                 "bf16",
@@ -374,6 +377,7 @@ def parse_args_and_get_parser(
     values = {name: value for name, value in vars(args).items() if name in AllConfig.model_fields} | {
         "raw_megatron": resolve_megatron_config(args, base_args=backend_values if backend == "megatron" else {}),
         "raw_fsdp": FsdpArgsNamespace(**backend_values) if backend == "fsdp" else None,
+        "raw_torchtitan": TorchtitanArgsNamespace(**backend_values) if backend == "torchtitan" else None,
         "sglang": sglang,
         "sglang_scaling": sglang_scaling,
         "sglang_model_routers": None,
