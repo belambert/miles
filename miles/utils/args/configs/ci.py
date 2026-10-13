@@ -14,10 +14,6 @@ class CiConfig(BaseConfig):
     ] = 0.0
     ci_disable_kl_checker: A[bool, Arg()] = False
     ci_disable_logprobs_checker: A[bool, Arg()] = False
-    ci_logprobs_checker_abs_tol: A[
-        float,
-        Arg(help="Absolute tolerance between the batch-mean train and rollout log probs in the CI check."),
-    ] = 0.03
     ci_disable_weight_update_checker: A[bool, Arg()] = False
     ci_metric_checker_key: A[str | None, Arg()] = None
     ci_metric_checker_threshold: A[float | None, Arg()] = None
