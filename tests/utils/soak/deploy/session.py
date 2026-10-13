@@ -24,4 +24,5 @@ async def follow_launchers(first: Awaitable[LaunchOutcome], *, chain: LauncherCh
         assert not chain.empty(), "A launcher was replaced, and no take-over launcher succeeded it"
         outcome = await chain.get_nowait()
     while not chain.empty():
-        await chain.get_nowait()
+        outcome = await chain.get_nowait()
+    assert outcome == LaunchOutcome.FINISHED, "The final launcher did not finish successfully"
