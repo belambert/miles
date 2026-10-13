@@ -261,7 +261,7 @@ def _torch_log_probs_and_entropy(
                 logits_chunk,
                 tokens_chunk.unsqueeze(-1),
                 group=parallel_state.tp.group if parallel_state.tp.size > 1 else None,
-                vocab_size=getattr(args, "vocab_size", None),
+                vocab_size=args.backend.vocab_size if args.train_backend == "megatron" else None,
                 temperature=args.rollout_temperature,
                 chunk_size=args.log_probs_chunk_size,
                 with_entropy=with_entropy,
