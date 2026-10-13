@@ -2,6 +2,7 @@ import asyncio
 import logging
 import time
 
+from miles.backends.megatron_utils.checkpoint_request import MegatronCkptLoadConfig
 from miles.ray.train.cell_monitor import compute_cell_status
 from miles.ray.train.cell_state import (
     CellState,
@@ -65,6 +66,7 @@ class TrainerCell:
     async def init(
         self,
         *,
+        ckpt_load_config: MegatronCkptLoadConfig | None,
         indep_dp_info: IndepDPInfo,
         indep_dp_store_addr: str | None,
         recv_ckpt_src_rank: int | None = None,
@@ -77,6 +79,7 @@ class TrainerCell:
         results = await self.execute(
             "init",
             args=self.args,
+            ckpt_load_config=ckpt_load_config,
             role=self.role,
             with_ref=self.with_ref,
             with_opd_teacher=self.with_opd_teacher,
@@ -94,8 +97,8 @@ class TrainerCell:
         self.health_checker.stop()
         self._cancellabel_tasks.cancel()
 
-    async def load_state(self) -> list:
-        return await self.execute("load_state")
+    async def load_state(self, ckpt_load_config: MegatronCkptLoadConfig | None) -> list:
+        return await self.execute("load_state", ckpt_load_config=ckpt_load_config)
 
     async def train(
         self,
@@ -143,6 +146,7 @@ class TrainerCell:
         recv_ckpt_src_rank: int | None,
     ):
         await self.init(
+            ckpt_load_config=None,
             indep_dp_info=indep_dp_info,
             indep_dp_store_addr=indep_dp_store_addr,
             recv_ckpt_src_rank=recv_ckpt_src_rank,

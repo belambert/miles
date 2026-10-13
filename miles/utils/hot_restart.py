@@ -75,7 +75,7 @@ async def trainer_init_or_load_state(
     if not resumed:
         return await trainer.init(request)
 
-    start_rollout_ids = await asyncio.wait_for(trainer.load_state(), timeout=_TRAINER_RELOAD_TIMEOUT_SECONDS)
+    start_rollout_ids = await asyncio.wait_for(trainer.load_state(request), timeout=_TRAINER_RELOAD_TIMEOUT_SECONDS)
     logger.info(f"Resumed the already-initialized trainer {trainer_id!r} at rollout ids {start_rollout_ids}")
     return start_rollout_ids
 

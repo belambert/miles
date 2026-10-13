@@ -1082,7 +1082,8 @@ def miles_validate_args(args):
 
     # TODO: refactor
     args.requested_load = args.load
-    if args.megatron_config is None:
+    if args.train_backend != "megatron" and args.megatron_config is None:
+        # TODO: After zhichen's refactor, align non-Megatron backends with Megatron's runtime checkpoint load inputs.
         resolve_args_checkpoint_load(args)
 
     if args.eval_interval is not None:
