@@ -61,6 +61,7 @@ class TestConnect:
     def _make_protocol() -> UpdateWeightFromTensor:
         protocol = UpdateWeightFromTensor.__new__(UpdateWeightFromTensor)
         protocol.args = Namespace(
+            train_backend="megatron",
             rollout_num_gpus_per_engine=2,
             actor_num_nodes=1,
             actor_num_gpus_per_node=8,

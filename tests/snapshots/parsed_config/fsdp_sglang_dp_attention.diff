@@ -1,17 +1,17 @@
 --- fsdp
 +++ fsdp_sglang_dp_attention
-@@ -371 +371 @@
+@@ -376 +376 @@
 -  rollout_num_gpus_per_engine: 1
 +  rollout_num_gpus_per_engine: 2
-@@ -408 +408 @@
+@@ -416 +416 @@
 -    dp_aware: false
 +    dp_aware: true
-@@ -593 +593 @@
+@@ -615 +615 @@
 -      dp_size: 1
 +      dp_size: 2
-@@ -619 +619 @@
+@@ -641 +641 @@
 -      enable_dp_attention: false
 +      enable_dp_attention: true
-@@ -967 +967 @@
+@@ -998 +998 @@
 -      tp_size: 1
 +      tp_size: 2

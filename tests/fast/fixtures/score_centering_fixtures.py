@@ -21,6 +21,14 @@ def _args(**overrides: object) -> Namespace:
         rollout_top_logprobs_num=3,
         rollout_sampling_logprobs_mode="selected",
         use_opd=False,
+        use_tis=False,
+        custom_tis_function_path=None,
+        use_opsm=False,
+        recompute_logprobs_via_prefill=False,
+        sglang_speculative_algorithm=None,
+        custom_pg_loss_reducer_function_path=None,
+        multi_lora=False,
+        custom_convert_samples_to_train_data_path=None,
         opd_log_prob_top_k=0,
         opd_top_k_strategy="only-student",
         score_centering_is="none",
@@ -45,7 +53,9 @@ def _args(**overrides: object) -> Namespace:
         observe_training_entropy=False,
         use_kl_loss=False,
     )
-    return Namespace(**(values | overrides))
+    values.update(overrides)
+    backend = Namespace(vocab_size=values.pop("vocab_size"))
+    return Namespace(**values, train_backend="megatron", backend=backend)
 
 
 def _turn(prompt: list[int], output: list[int], probabilities: list[float]) -> Sample:

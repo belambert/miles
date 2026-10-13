@@ -3,12 +3,22 @@
 @@ -11,0 +12,2 @@
 +- --custom-inference-engine-provider-path
 +- tests.fast.argument_snapshot.argparser.scenarios._Hook
-@@ -98 +100 @@
+@@ -99 +101 @@
 -    custom_inference_engine_provider_path: null
 +    custom_inference_engine_provider_path: tests.fast.argument_snapshot.argparser.scenarios._Hook
-@@ -969,0 +972 @@
+@@ -1000,0 +1003 @@
 +    snapshot_hook: 23
-@@ -17386,0 +17390,8 @@
+@@ -11519,2 +11522,2 @@
+-          ''mistral'', ''nemotron_3'', ''granite_thinking_parser'', ''interns1'', ''gemma4'', ''inkling'', ''iquest_q1'',
+-          ''cohere_command4'', ''gigachat35''].'
++          ''mistral'', ''nemotron_3'', ''granite_thinking_parser'', ''interns1'', ''gemma4'', ''gigachat35'', ''inkling'',
++          ''iquest_q1'', ''cohere_command4''].'
+@@ -17300,2 +17303,2 @@
+-          ''mistral'', ''nemotron_3'', ''granite_thinking_parser'', ''interns1'', ''gemma4'', ''inkling'', ''iquest_q1'',
+-          ''cohere_command4'', ''gigachat35''].'
++          ''mistral'', ''nemotron_3'', ''granite_thinking_parser'', ''interns1'', ''gemma4'', ''gigachat35'', ''inkling'',
++          ''iquest_q1'', ''cohere_command4''].'
+@@ -17997,0 +18001,8 @@
 +      - default: 23
 +        dest: snapshot_hook
 +        group: options

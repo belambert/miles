@@ -1,6 +1,6 @@
 --- fsdp
 +++ fsdp_reject_opd_megatron_without_checkpoint
-@@ -1,1073 +1,3 @@
+@@ -1,1105 +1,3 @@
 -config:
 -  actor_num_gpus_per_node: 1
 -  actor_num_nodes: 1
@@ -33,6 +33,7 @@
 -  ci_disable_logprobs_checker: false
 -  ci_disable_weight_update_checker: false
 -  ci_enable_metrics_capture: false
+-  ci_event_root: null
 -  ci_fault_hooks: null
 -  ci_fault_hooks_path: null
 -  ci_inject_missing_prefetched_batch_bug: false
@@ -40,7 +41,6 @@
 -  ci_inject_rollout_data_path: null
 -  ci_inject_rollout_data_start_rollout_id: null
 -  ci_load_grad_norm: null
--  ci_logprobs_checker_abs_tol: 0.03
 -  ci_metric_checker_expect_num: null
 -  ci_metric_checker_key: null
 -  ci_metric_checker_threshold: null
@@ -105,6 +105,7 @@
 -  distributed_backend: nccl
 -  distributed_timeout_minutes: 10
 -  dsa_attention_backend: tilelang
+-  dsa_impl: miles
 -  dsv4_impl: megatron
 -  dump_details: null
 -  dumper_dir: /tmp/dumper
@@ -158,7 +159,6 @@
 -  extra_high_precision_layers_megatron:
 -    $tuple: []
 -  fetch_trajectory_retry_times: -1
--  freeze_indexer: false
 -  ft_components: []
 -  fully_async: false
 -  gamma: 1.0
@@ -301,6 +301,9 @@
 -    fsdp_state_dict_cpu_offload: true
 -    gradient_checkpointing: false
 -    keep_fp32_master: true
+-    kernel_backend: native
+-    kernel_mapping_path: ''
+-    kernel_strict: false
 -    load: null
 -    lr: 1.0e-06
 -    lr_decay_iters: null
@@ -322,6 +325,7 @@
 -    profile_step_end: 12
 -    profile_step_start: 10
 -    rank: 0
+-    recompute_granularity: null
 -    record_memory_history: false
 -    tensorboard_dir: null
 -    use_checkpoint_lr_scheduler: true
@@ -339,6 +343,7 @@
 -      overrides: {}
 -      role: actor
 -      trainer_id: actor
+-  raw_torchtitan: null
 -  recompute_logprobs_via_prefill: false
 -  recompute_loss_function: false
 -  ref_ckpt_step: null
@@ -373,6 +378,7 @@
 -  rollout_num_gpus: null
 -  rollout_num_gpus_per_engine: 1
 -  rollout_sample_filter_path: null
+-  rollout_sampling_logprobs_mode: selected
 -  rollout_seed: 42
 -  rollout_shuffle: false
 -  rollout_skip_special_tokens: false
@@ -382,8 +388,10 @@
 -  rollout_task_type: math
 -  rollout_temperature: 1.0
 -  rollout_top_k: -1
+-  rollout_top_logprobs_num: 0
 -  rollout_top_p: 1.0
 -  router_args:
+-    allow_requests_without_routing_key: false
 -    api_key: null
 -    assignment_mode: random
 -    backend: sglang
@@ -418,6 +426,7 @@
 -    health_failure_threshold: 3
 -    health_success_threshold: 2
 -    history_backend: memory
+-    json_log: false
 -    jwt_audience: null
 -    jwt_issuer: null
 -    jwt_jwks_uri: null
@@ -469,6 +478,7 @@
 -    service_discovery_namespace: null
 -    service_discovery_port: 80
 -    shutdown_grace_period_secs: 180
+-    test_external_dp_routing: false
 -    tls_cert_path: null
 -    tls_key_path: null
 -    tokenizer_cache_enable_l0: false
@@ -491,6 +501,10 @@
 -  save_interval: null
 -  save_local_weight_checksum: false
 -  save_trigger_sentinel: null
+-  score_centering_is: none
+-  score_centering_mis_high: 5.0
+-  score_centering_mis_low: 0.5
+-  score_centering_tis_clip: 2.0
 -  seed: 1234
 -  session_message_matcher: strict
 -  session_sample_picker_path: miles.rollout.session.v2.picker_hub.drop_same_prompt_retries
@@ -513,6 +527,7 @@
 -      attn_cp_size: 1
 -      batch_notify_size: 16
 -      bf16_gemm_backend: auto
+-      boundary_reduction: auto
 -      bucket_e2e_request_latency: null
 -      bucket_inter_token_latency: null
 -      bucket_time_to_first_token: null
@@ -522,6 +537,7 @@
 -      chunked_prefill_size: null
 -      completion_template: null
 -      constrained_json_disable_any_whitespace: false
+-      constrained_json_max_whitespace_cnt: null
 -      constrained_json_whitespace_pattern: null
 -      context_length: null
 -      cp_strategy: null
@@ -534,6 +550,8 @@
 -      cuda_graph_config: null
 -      cuda_graph_max_bs_decode: null
 -      cuda_graph_max_bs_prefill: null
+-      cuda_graph_max_seq_len_prefill: null
+-      cuda_graph_prefill_max_context: null
 -      cuda_graph_tc_compiler: null
 -      custom_pull_weights_pre_read_hook: null
 -      custom_weight_loader: null
@@ -561,6 +579,8 @@
 -      delete_ckpt_after_loading: false
 -      detokenizer_worker_num: 1
 -      device: null
+-      disable_aiter_allreduce_fusion_in_decode: false
+-      disable_aiter_allreduce_fusion_in_prefill: false
 -      disable_attn_tp_gather: false
 -      disable_chunked_prefix_cache: false
 -      disable_cuda_graph: false
@@ -583,8 +603,10 @@
 -      disaggregation_decode_enable_offload_kvcache: false
 -      disaggregation_decode_enable_radix_cache: false
 -      disaggregation_decode_extra_slots: null
+-      disaggregation_decode_host_receive_threshold: 0.0
 -      disaggregation_decode_polling_interval: 1
 -      disaggregation_decode_retraction_backup: null
+-      disaggregation_enable_kv_checksum: false
 -      disaggregation_ib_device: null
 -      disaggregation_mode: 'null'
 -      disaggregation_transfer_backend: mooncake
@@ -606,7 +628,6 @@
 -      dynamic_batch_tokenizer_batch_timeout: 0.002
 -      elastic_ep_backend: null
 -      elastic_ep_initial_size: null
--      elastic_ep_rejoin: false
 -      elastic_ep_scale_timeout: 600
 -      enable_adaptive_dispatch_to_encoder: false
 -      enable_aiter_allreduce_fusion: false
@@ -616,6 +637,7 @@
 -      enable_cp_decode_attn_tp: false
 -      enable_cudagraph_gc: false
 -      enable_custom_logit_processor: false
+-      enable_decoder_swa_bounded_replay: false
 -      enable_deepseek_v4_fp4_indexer: false
 -      enable_dense_mlp_attn_tp: false
 -      enable_deterministic_inference: false
@@ -627,6 +649,7 @@
 -      enable_dynamic_batch_tokenizer: false
 -      enable_dynamic_chunking: false
 -      enable_elastic_expert_backup: false
+-      enable_encoder_swa_bounded_replay: false
 -      enable_engine_info_bootstrap: false
 -      enable_eplb: false
 -      enable_flashinfer_allreduce_fusion: false
@@ -644,6 +667,7 @@
 -      enable_lean_attention: null
 -      enable_linear_replayssm: false
 -      enable_linear_replayssm_spec: false
+-      enable_linker_mla_dedup: false
 -      enable_lmcache: false
 -      enable_lora: null
 -      enable_lora_overlap_loading: null
@@ -660,6 +684,7 @@
 -      enable_nccl_nvls: false
 -      enable_p2p_check: false
 -      enable_page_major_kv_layout: false
+-      enable_pd_role_switch: false
 -      enable_pdmux: false
 -      enable_precise_embedding_interpolation: false
 -      enable_prefill_cp: false
@@ -739,7 +764,9 @@
 -      grammar_backend: null
 -      grpc_mode: false
 -      grpc_port: null
+-      grpc_response_timeout_secs: 300
 -      hf_chat_template_name: null
+-      hicache_host_memory_fraction: 0.8
 -      hicache_host_memory_mode: cache
 -      hicache_io_backend: kernel
 -      hicache_mem_layout: page_first
@@ -761,7 +788,6 @@
 -      int8_mamba_ckpt_size: null
 -      is_embedding: false
 -      json_model_override_args: '{}'
--      keep_mm_feature_on_device: false
 -      kt_cpuinfer: null
 -      kt_max_deferred_experts_per_token: null
 -      kt_method: AMXINT4
@@ -852,6 +878,7 @@
 -      offload_num_in_group: 1
 -      offload_prefetch_step: 1
 -      optimistic_prefill_attempts: 0
+-      otlp_service_name: null
 -      otlp_traces_endpoint: localhost:4317
 -      page_size: null
 -      pdmux_config_path: null
@@ -871,6 +898,7 @@
 -      prefill_delayer_queue_min_ratio: null
 -      prefill_delayer_token_usage_low_watermark: null
 -      prefill_delayer_wait_seconds_buckets: null
+-      prefill_kv_cache_dequant_dtype: auto
 -      prefill_max_requests: null
 -      prefill_only_disable_kv_cache: false
 -      priority_scheduling_preemption_threshold: 10
@@ -902,6 +930,7 @@
 -      schedule_policy: fcfs
 -      scheduler_recv_interval: 1
 -      served_model_name: null
+-      shared_experts_tp_size: null
 -      show_time_cost: false
 -      sidecar: null
 -      sidecar_args: null
@@ -926,6 +955,7 @@
 -      speculative_draft_model_path: null
 -      speculative_draft_model_quantization: null
 -      speculative_draft_model_revision: null
+-      speculative_draft_sink_size: null
 -      speculative_draft_window_size: null
 -      speculative_dsa_topk_backend: sgl-kernel
 -      speculative_dspark_align_verify_tokens_to_graph_tier: false
@@ -957,6 +987,7 @@
 -      stream_response_default_include_usage: false
 -      strip_thinking_cache: false
 -      swa_full_tokens_ratio: null
+-      swa_prefix_tails: null
 -      tbo_token_distribution_threshold: 0.48
 -      tokenizer_backend: huggingface
 -      tokenizer_metrics_allowed_custom_labels: null
@@ -974,6 +1005,7 @@
 -      triton_attention_split_tile_size: null
 -      true_on_policy_contract: null
 -      trust_mm_content_hashes: false
+-      trust_request_chat_template: false
 -      unified_cache_external_linker_backend: mooncake
 -      uno_lora_path: null
 -      use_ray: false

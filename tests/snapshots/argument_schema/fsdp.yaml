@@ -43,6 +43,7 @@ parsed:
     attn_implementation: flash_attention_2
     balance_by_flops: false
     balance_data: false
+    bf16: true
     buffer_filter_path: null
     calculate_per_token_loss: false
     chat_template_path: null
@@ -59,6 +60,7 @@ parsed:
     ci_disable_kl_checker: false
     ci_disable_logprobs_checker: false
     ci_disable_weight_update_checker: false
+    ci_event_root: null
     ci_fault_hooks: null
     ci_fault_hooks_path: null
     ci_inject_missing_prefetched_batch_bug: false
@@ -66,7 +68,6 @@ parsed:
     ci_inject_rollout_data_path: null
     ci_inject_rollout_data_start_rollout_id: null
     ci_load_grad_norm: null
-    ci_logprobs_checker_abs_tol: 0.03
     ci_metric_checker_expect_num: null
     ci_metric_checker_key: null
     ci_metric_checker_threshold: null
@@ -132,6 +133,7 @@ parsed:
     distributed_timeout_minutes: 10
     dp_replicate_size: 1
     dsa_attention_backend: tilelang
+    dsa_impl: miles
     dsv4_impl: megatron
     dump_details: null
     dumper_dir: /tmp/dumper
@@ -182,7 +184,6 @@ parsed:
       $tuple: []
     fetch_trajectory_retry_times: -1
     fp16: false
-    freeze_indexer: false
     fsdp_cpu_backend: gloo
     fsdp_cpu_offload: false
     fsdp_state_dict_cpu_offload: true
@@ -202,6 +203,9 @@ parsed:
     input_key: input
     keep_fp32_master: true
     keep_old_actor: false
+    kernel_backend: native
+    kernel_mapping_path: ''
+    kernel_strict: false
     kl_coef: 0.0
     kl_loss_coef: 0.0
     kl_loss_type: k1
@@ -319,6 +323,7 @@ parsed:
     prometheus_run_name: null
     prompt_data: null
     qkv_format: thd
+    recompute_granularity: null
     recompute_logprobs_via_prefill: false
     recompute_loss_function: false
     record_memory_history: false
@@ -358,7 +363,9 @@ parsed:
     rollout_task_type: math
     rollout_temperature: 1.0
     rollout_top_k: -1
+    rollout_top_logprobs_num: 0
     rollout_top_p: 1.0
+    router_allow_requests_without_routing_key: false
     router_api_key: null
     router_assignment_mode: random
     router_backend: sglang
@@ -393,6 +400,7 @@ parsed:
     router_health_failure_threshold: 3
     router_health_success_threshold: 2
     router_history_backend: memory
+    router_json_log: false
     router_jwt_audience: null
     router_jwt_issuer: null
     router_jwt_jwks_uri: null
@@ -444,6 +452,7 @@ parsed:
     router_service_discovery_namespace: null
     router_service_discovery_port: 80
     router_shutdown_grace_period_secs: 180
+    router_test_external_dp_routing: false
     router_tls_cert_path: null
     router_tls_key_path: null
     router_tokenizer_cache_enable_l0: false
@@ -465,6 +474,10 @@ parsed:
     save_interval: null
     save_local_weight_checksum: false
     save_trigger_sentinel: null
+    score_centering_is: none
+    score_centering_mis_high: 5.0
+    score_centering_mis_low: 0.5
+    score_centering_tis_clip: 2.0
     seed: 1234
     session_message_matcher: strict
     session_sample_picker_path: miles.rollout.session.v2.picker_hub.drop_same_prompt_retries
@@ -484,6 +497,7 @@ parsed:
     sglang_attn_cp_size: 1
     sglang_batch_notify_size: 16
     sglang_bf16_gemm_backend: auto
+    sglang_boundary_reduction: auto
     sglang_bucket_e2e_request_latency: null
     sglang_bucket_inter_token_latency: null
     sglang_bucket_time_to_first_token: null
@@ -494,6 +508,7 @@ parsed:
     sglang_completion_template: null
     sglang_config: null
     sglang_constrained_json_disable_any_whitespace: false
+    sglang_constrained_json_max_whitespace_cnt: null
     sglang_constrained_json_whitespace_pattern: null
     sglang_context_length: null
     sglang_cp_strategy: null
@@ -506,6 +521,8 @@ parsed:
     sglang_cuda_graph_config: null
     sglang_cuda_graph_max_bs_decode: null
     sglang_cuda_graph_max_bs_prefill: null
+    sglang_cuda_graph_max_seq_len_prefill: null
+    sglang_cuda_graph_prefill_max_context: null
     sglang_cuda_graph_tc_compiler: null
     sglang_custom_pull_weights_pre_read_hook: null
     sglang_custom_weight_loader: null
@@ -533,6 +550,8 @@ parsed:
     sglang_delete_ckpt_after_loading: false
     sglang_detokenizer_worker_num: 1
     sglang_device: null
+    sglang_disable_aiter_allreduce_fusion_in_decode: false
+    sglang_disable_aiter_allreduce_fusion_in_prefill: false
     sglang_disable_attn_tp_gather: false
     sglang_disable_chunked_prefix_cache: false
     sglang_disable_cuda_graph: false
@@ -555,8 +574,10 @@ parsed:
     sglang_disaggregation_decode_enable_offload_kvcache: false
     sglang_disaggregation_decode_enable_radix_cache: false
     sglang_disaggregation_decode_extra_slots: null
+    sglang_disaggregation_decode_host_receive_threshold: 0.0
     sglang_disaggregation_decode_polling_interval: 1
     sglang_disaggregation_decode_retraction_backup: null
+    sglang_disaggregation_enable_kv_checksum: false
     sglang_disaggregation_ib_device: null
     sglang_disaggregation_mode: 'null'
     sglang_disaggregation_transfer_backend: mooncake
@@ -578,7 +599,6 @@ parsed:
     sglang_dynamic_batch_tokenizer_batch_timeout: 0.002
     sglang_elastic_ep_backend: null
     sglang_elastic_ep_initial_size: null
-    sglang_elastic_ep_rejoin: false
     sglang_elastic_ep_scale_timeout: 600
     sglang_enable_adaptive_dispatch_to_encoder: false
     sglang_enable_aiter_allreduce_fusion: false
@@ -588,6 +608,7 @@ parsed:
     sglang_enable_cp_decode_attn_tp: false
     sglang_enable_cudagraph_gc: false
     sglang_enable_custom_logit_processor: false
+    sglang_enable_decoder_swa_bounded_replay: false
     sglang_enable_deepseek_v4_fp4_indexer: false
     sglang_enable_dense_mlp_attn_tp: false
     sglang_enable_deterministic_inference: false
@@ -599,6 +620,7 @@ parsed:
     sglang_enable_dynamic_batch_tokenizer: false
     sglang_enable_dynamic_chunking: false
     sglang_enable_elastic_expert_backup: false
+    sglang_enable_encoder_swa_bounded_replay: false
     sglang_enable_engine_info_bootstrap: false
     sglang_enable_eplb: false
     sglang_enable_flashinfer_allreduce_fusion: false
@@ -616,6 +638,7 @@ parsed:
     sglang_enable_lean_attention: null
     sglang_enable_linear_replayssm: false
     sglang_enable_linear_replayssm_spec: false
+    sglang_enable_linker_mla_dedup: false
     sglang_enable_lmcache: false
     sglang_enable_lora: null
     sglang_enable_lora_overlap_loading: null
@@ -632,6 +655,7 @@ parsed:
     sglang_enable_nccl_nvls: false
     sglang_enable_p2p_check: false
     sglang_enable_page_major_kv_layout: false
+    sglang_enable_pd_role_switch: false
     sglang_enable_pdmux: false
     sglang_enable_precise_embedding_interpolation: false
     sglang_enable_prefill_cp: false
@@ -711,7 +735,9 @@ parsed:
     sglang_grammar_backend: null
     sglang_grpc_mode: false
     sglang_grpc_port: null
+    sglang_grpc_response_timeout_secs: 300
     sglang_hf_chat_template_name: null
+    sglang_hicache_host_memory_fraction: 0.8
     sglang_hicache_host_memory_mode: cache
     sglang_hicache_io_backend: kernel
     sglang_hicache_mem_layout: page_first
@@ -733,7 +759,6 @@ parsed:
     sglang_int8_mamba_ckpt_size: null
     sglang_is_embedding: false
     sglang_json_model_override_args: '{}'
-    sglang_keep_mm_feature_on_device: false
     sglang_kt_cpuinfer: null
     sglang_kt_max_deferred_experts_per_token: null
     sglang_kt_method: AMXINT4
@@ -824,6 +849,7 @@ parsed:
     sglang_offload_num_in_group: 1
     sglang_offload_prefetch_step: 1
     sglang_optimistic_prefill_attempts: 0
+    sglang_otlp_service_name: null
     sglang_otlp_traces_endpoint: localhost:4317
     sglang_page_size: null
     sglang_pdmux_config_path: null
@@ -843,6 +869,7 @@ parsed:
     sglang_prefill_delayer_queue_min_ratio: null
     sglang_prefill_delayer_token_usage_low_watermark: null
     sglang_prefill_delayer_wait_seconds_buckets: null
+    sglang_prefill_kv_cache_dequant_dtype: auto
     sglang_prefill_max_requests: null
     sglang_prefill_only_disable_kv_cache: false
     sglang_priority_scheduling_preemption_threshold: 10
@@ -879,6 +906,7 @@ parsed:
     sglang_scheduler_recv_interval: 1
     sglang_served_model_name: null
     sglang_server_concurrency: 512
+    sglang_shared_experts_tp_size: null
     sglang_show_time_cost: false
     sglang_sidecar: null
     sglang_sidecar_args: null
@@ -903,6 +931,7 @@ parsed:
     sglang_speculative_draft_model_path: null
     sglang_speculative_draft_model_quantization: null
     sglang_speculative_draft_model_revision: null
+    sglang_speculative_draft_sink_size: null
     sglang_speculative_draft_window_size: null
     sglang_speculative_dsa_topk_backend: sgl-kernel
     sglang_speculative_dspark_align_verify_tokens_to_graph_tier: false
@@ -934,6 +963,7 @@ parsed:
     sglang_stream_response_default_include_usage: false
     sglang_strip_thinking_cache: false
     sglang_swa_full_tokens_ratio: null
+    sglang_swa_prefix_tails: null
     sglang_tbo_token_distribution_threshold: 0.48
     sglang_tokenizer_backend: huggingface
     sglang_tokenizer_metrics_allowed_custom_labels: null
@@ -951,6 +981,7 @@ parsed:
     sglang_triton_attention_split_tile_size: null
     sglang_true_on_policy_contract: null
     sglang_trust_mm_content_hashes: false
+    sglang_trust_request_chat_template: false
     sglang_unified_cache_external_linker_backend: mooncake
     sglang_uno_lora_path: null
     sglang_use_ray: false
@@ -1269,6 +1300,33 @@ schema:
         - --attn-implementation
         type:
           $callable: builtins.str
+      - default: native
+        dest: kernel_backend
+        group: options
+        help: null
+        option_strings:
+        - --kernel-backend
+        type:
+          $callable: builtins.str
+      - default: ''
+        dest: kernel_mapping_path
+        group: options
+        help: null
+        option_strings:
+        - --kernel-mapping-path
+        type:
+          $callable: builtins.str
+      - action:
+          $callable: argparse.BooleanOptionalAction
+        default: false
+        dest: kernel_strict
+        group: options
+        help: null
+        nargs: 0
+        option_strings:
+        - --kernel-strict
+        - --no-kernel-strict
+        type: null
       - default: null
         dest: wandb_project
         group: options
@@ -1287,14 +1345,14 @@ schema:
           $callable: builtins.str
       - action:
           $callable: argparse.BooleanOptionalAction
-        default: false
-        dest: gradient_checkpointing
+        default: true
+        dest: bf16
         group: options
         help: null
         nargs: 0
         option_strings:
-        - --gradient-checkpointing
-        - --no-gradient-checkpointing
+        - --bf16
+        - --no-bf16
         type: null
       - action:
           $callable: argparse.BooleanOptionalAction
@@ -1307,6 +1365,25 @@ schema:
         - --fp16
         - --no-fp16
         type: null
+      - action:
+          $callable: argparse.BooleanOptionalAction
+        default: false
+        dest: gradient_checkpointing
+        group: options
+        help: null
+        nargs: 0
+        option_strings:
+        - --gradient-checkpointing
+        - --no-gradient-checkpointing
+        type: null
+      - default: null
+        dest: recompute_granularity
+        group: options
+        help: null
+        option_strings:
+        - --recompute-granularity
+        type:
+          $callable: builtins.str
       - action:
           $callable: argparse.BooleanOptionalAction
         default: true
@@ -1780,6 +1857,7 @@ schema:
           $set:
           - fsdp
           - megatron
+          - torchtitan
         default: megatron
         dest: train_backend
         group: options
@@ -1811,18 +1889,6 @@ schema:
           GPU. 'flashqla' (FlashQLA) requires NVIDIA SM90 (Hopper) or newer, CUDA 12.8+, and PyTorch 2.8+.
         option_strings:
         - --linear-attention-backend
-        type:
-          $callable: builtins.str
-      - choices:
-          $set:
-          - flashinfer
-          - torch
-        default: torch
-        dest: miles_dsa_topk_backend
-        group: options
-        help: Top-k backend for Miles DSA indexer.
-        option_strings:
-        - --miles-dsa-topk-backend
         type:
           $callable: builtins.str
       - action:
@@ -2040,6 +2106,14 @@ schema:
         - --custom-agent-function-path
         type:
           $callable: builtins.str
+      - default: 0
+        dest: rollout_top_logprobs_num
+        group: options
+        help: null
+        option_strings:
+        - --rollout-top-logprobs-num
+        type:
+          $callable: builtins.int
       - default: null
         dest: hf_checkpoint
         group: options
@@ -2274,6 +2348,7 @@ schema:
       - choices:
           $set:
           - broadcast
+          - broadcast_packed
           - disk-delta
           - p2p
         default: broadcast
@@ -3250,6 +3325,7 @@ schema:
           $set:
           - custom_loss
           - policy_loss
+          - score_centering
           - sft_loss
         default: policy_loss
         dest: loss_type
@@ -3260,6 +3336,43 @@ schema:
         - --loss-type
         type:
           $callable: builtins.str
+      - choices:
+          $set:
+          - mis
+          - none
+          - tis
+        default: none
+        dest: score_centering_is
+        group: options
+        help: null
+        option_strings:
+        - --score-centering-is
+        type:
+          $callable: builtins.str
+      - default: 2.0
+        dest: score_centering_tis_clip
+        group: options
+        help: null
+        option_strings:
+        - --score-centering-tis-clip
+        type:
+          $callable: builtins.float
+      - default: 0.5
+        dest: score_centering_mis_low
+        group: options
+        help: null
+        option_strings:
+        - --score-centering-mis-low
+        type:
+          $callable: builtins.float
+      - default: 5.0
+        dest: score_centering_mis_high
+        group: options
+        help: null
+        option_strings:
+        - --score-centering-mis-high
+        type:
+          $callable: builtins.float
       - default: null
         dest: custom_loss_function_path
         group: options
@@ -4379,8 +4492,10 @@ schema:
       - choices:
           $set:
           - cache_aware
+          - consistent_hashing
           - manual
           - power_of_two
+          - prefix_hash
           - random
           - round_robin
         default: cache_aware
@@ -4395,8 +4510,10 @@ schema:
           $set:
           - bucket
           - cache_aware
+          - consistent_hashing
           - manual
           - power_of_two
+          - prefix_hash
           - random
           - round_robin
         default: null
@@ -4410,8 +4527,10 @@ schema:
       - choices:
           $set:
           - cache_aware
+          - consistent_hashing
           - manual
           - power_of_two
+          - prefix_hash
           - random
           - round_robin
         default: null
@@ -4528,12 +4647,35 @@ schema:
           $callable: argparse._StoreTrueAction
         const: true
         default: false
+        dest: router_allow_requests_without_routing_key
+        group: Routing Policy
+        help: Allow requests without an X-SMG-Routing-Key header under consistent_hashing/manual policies
+        nargs: 0
+        option_strings:
+        - --router-allow-requests-without-routing-key
+        type: null
+      - action:
+          $callable: argparse._StoreTrueAction
+        const: true
+        default: false
         dest: router_mini_lb
         group: PD Disaggregation
         help: Enable MiniLB
         nargs: 0
         option_strings:
         - --router-mini-lb
+        type: null
+      - action:
+          $callable: argparse._StoreTrueAction
+        const: true
+        default: false
+        dest: router_test_external_dp_routing
+        group: PD Disaggregation
+        help: (MiniLB only) Randomly assign routed_dp_rank / disagg_prefill_dp_rank per request and verify the response dp_rank
+          matches.
+        nargs: 0
+        option_strings:
+        - --router-test-external-dp-routing
         type: null
       - action:
           $callable: argparse._StoreTrueAction
@@ -4609,6 +4751,17 @@ schema:
         - --router-log-level
         type:
           $callable: builtins.str
+      - action:
+          $callable: argparse._StoreTrueAction
+        const: true
+        default: false
+        dest: router_json_log
+        group: Logging
+        help: Enable structured JSON log output instead of plain text.
+        nargs: 0
+        option_strings:
+        - --router-json-log
+        type: null
       - action:
           $callable: argparse._StoreTrueAction
         const: true
@@ -5950,7 +6103,6 @@ schema:
           - auto
           - bf16
           - bfloat16
-          - fp4_e2m1
           - fp4_mx_block16
           - fp8_e4m3
           - fp8_e5m2
@@ -6143,6 +6295,7 @@ schema:
           - priority
           - random
           - routing-key
+          - shortest-prefill-first
         default: fcfs
         dest: sglang_schedule_policy
         group: options
@@ -6277,12 +6430,15 @@ schema:
           - lru
           - priority
           - slru
+          - tlru
         default: lru
         dest: sglang_radix_eviction_policy
         group: options
         help: The eviction policy of radix trees. 'lru' stands for Least Recently Used, 'lfu' stands for Least Frequently
-          Used, 'slru' stands for Segmented Least Recently Used, and 'priority' evicts lower-priority requests first. See
-          https://docs.sglang.io/docs/advanced_features/radix_eviction_policy for what each policy optimizes for.
+          Used, 'slru' stands for Segmented Least Recently Used, 'priority' evicts lower-priority requests first, and 'tlru'
+          stands for Tail-Optimized LRU (arXiv:2510.15152), which evicts the part of a conversation that cannot affect tail
+          TTFT before falling back to LRU. See https://docs.sglang.io/docs/advanced_features/radix_eviction_policy for what
+          each policy optimizes for.
         option_strings:
         - --sglang-radix-eviction-policy
         type:
@@ -6291,7 +6447,8 @@ schema:
         dest: sglang_radix_eviction_policy_config
         group: options
         help: 'Tuning parameters for --radix-eviction-policy, as a json object passed to the policy as keyword arguments.
-          Only ''slru'' takes any today: protected_threshold (int, default 2), e.g. ''{"protected_threshold": 4}''. An unrecognized
+          ''slru'' takes protected_threshold (int, default 2), e.g. ''{"protected_threshold": 4}''; ''tlru'' takes threshold
+          and next_prompt_estimate (ints, tokens), e.g. ''{"threshold": 4096, "next_prompt_estimate": 512}''. An unrecognized
           key fails at startup, naming the key and the policy. See https://docs.sglang.io/docs/advanced_features/radix_eviction_policy#policy-parameters
           for the full parameter list.'
         option_strings:
@@ -6344,9 +6501,8 @@ schema:
         dest: sglang_enable_unified_memory
         group: options
         help: Replace the statically-partitioned hybrid-model pools (full-attn KV + SWA/Mamba state) with one byte buffer
-          split dynamically between sub-pools. Requires the Triton attention / linear-attn / Mamba backends. PD disaggregation
-          is supported over mooncake at equal attention TP with pp=1; not yet compatible with hierarchical / host-tiered KV
-          cache, prefill cuda-graph capture, or speculative decoding other than DSPARK.
+          split dynamically between sub-pools. Requires the Triton attention / linear-attn / Mamba backends. Supported PD-disaggregation
+          and speculative-decoding configurations are validated at startup.
         nargs: 0
         option_strings:
         - --sglang-enable-unified-memory
@@ -6657,6 +6813,15 @@ schema:
         option_strings:
         - --sglang-enable-shared-experts-attn-tp
         type: null
+      - default: null
+        dest: sglang_shared_experts_tp_size
+        group: options
+        help: Shared-expert TP size for Kimi-K3 with an expert-parallel all-to-all backend. Must divide attention TP size.
+          Overrides --enable-shared-experts-attn-tp when set; 1 replicates the weights.
+        option_strings:
+        - --sglang-shared-experts-tp-size
+        type:
+          $callable: builtins.int
       - action:
           $callable: argparse._StoreTrueAction
         const: true
@@ -6950,7 +7115,7 @@ schema:
       - default: null
         dest: sglang_admin_api_key
         group: options
-        help: Set admin API key for sensitive management endpoints (e.g. /clear_hicache_storage_backend). When set, admin
+        help: Set admin API key for sensitive management endpoints (e.g. /hicache/storage-backend/clear). When set, admin
           endpoints require this key and do NOT accept --api-key.
         option_strings:
         - --sglang-admin-api-key
@@ -6981,6 +7146,17 @@ schema:
         - --sglang-chat-template
         type:
           $callable: builtins.str
+      - action:
+          $callable: argparse._StoreTrueAction
+        const: true
+        default: false
+        dest: sglang_trust_request_chat_template
+        group: options
+        help: Allow a request to override the server chat template via its chat_template_kwargs. Off by default for safety.
+        nargs: 0
+        option_strings:
+        - --sglang-trust-request-chat-template
+        type: null
       - default: null
         dest: sglang_hf_chat_template_name
         group: options
@@ -7570,6 +7746,14 @@ schema:
         option_strings:
         - --sglang-constrained-json-disable-any-whitespace
         type: null
+      - default: null
+        dest: sglang_constrained_json_max_whitespace_cnt
+        group: options
+        help: (xgrammar backend only) Max consecutive whitespace chars allowed in JSON constrained output. None means unbounded.
+        option_strings:
+        - --sglang-constrained-json-max-whitespace-cnt
+        type:
+          $callable: builtins.int
       - choices:
           $set:
           - aiter
@@ -7980,6 +8164,19 @@ schema:
         - --sglang-cuda-graph-bs-prefill
         type:
           $callable: builtins.int
+      - default: null
+        dest: sglang_cuda_graph_prefill_max_context
+        group: options
+        help: "Maximum context length supported by DeepSeek-V4 breakable/full prefill CUDA graphs. Context-shaped attention\
+          \ metadata and indexer logits are allocated at this fixed size instead of the model maximum. Larger live contexts\
+          \ fall back to eager.\n\nSupports standard SI suffixes (k, M, G, T) and IEC suffixes\n    (Ki, Mi, Gi, Ti). Suffixes\
+          \ are case-sensitive.\n\n    Decimals are allowed for SI suffixes only.\n\n    Examples:\n        '1k' -> 1000 \
+          \     '1M' -> 1000000    '25.6k' -> 25600\n        '1Ki' -> 1024     '1Mi' -> 1048576\n    "
+        option_strings:
+        - --sglang-cuda-graph-prefill-max-context
+        - --sglang-context-bucket
+        type:
+          $callable: sglang.srt.utils.common.human_readable_int
       - choices:
           $set:
           - eager
@@ -8196,7 +8393,7 @@ schema:
         default: false
         dest: sglang_enable_mscclpp
         group: options
-        help: Enable using mscclpp for small messages for all-reduce kernel and fall back to NCCL.
+        help: Enable MSCCL++ for tuned AllReduce and AllGather messages, with NCCL fallback.
         nargs: 0
         option_strings:
         - --sglang-enable-mscclpp
@@ -8238,6 +8435,24 @@ schema:
         option_strings:
         - --sglang-pre-warm-nccl
         type: null
+      - choices:
+          $set:
+          - ar
+          - auto
+          - rs
+          - rs+rsv
+          - rsv
+        default: auto
+        dest: sglang_boundary_reduction
+        group: options
+        help: 'Select FFN boundary reduction: ar uses all-reduce then token redistribution; rs and rsv permit fixed-size and
+          variable-size reduce-scatter respectively; rs+rsv permits both (RSv first). Unsupported paths fall back to ar. The
+          option applies to the FFN stages of decoders built with stage boundaries, where auto resolves the model default;
+          other models ignore it. Required attention and MoE collectives and all-reduce fusion are unaffected.'
+        option_strings:
+        - --sglang-boundary-reduction
+        type:
+          $callable: builtins.str
       - action:
           $callable: argparse._StoreTrueAction
         const: true
@@ -8263,6 +8478,7 @@ schema:
       - choices:
           $set:
           - auto
+          - cutedsl
           - mnnvl
           - trtllm
         default: null
@@ -8271,8 +8487,9 @@ schema:
         help: 'Enable FlashInfer allreduce fusion and choose backend. Requires SM90 or SM10X NVIDIA GPUs. Defaults to auto.
           ''auto'': choose mnnvl on Blackwell (SM100/SM103) systems (single- and multi-node) and trtllm on SM90 single-node
           systems. ''trtllm'': available on single-node systems only. ''mnnvl'': available on SM90 single-node systems and
-          SM100/SM103 single-node or multi-node systems via MNNVL fabric. Fuses allreduce with Residual + RMSNorm for supported
-          MoE models.'
+          SM100/SM103 single-node or multi-node systems via MNNVL fabric. ''cutedsl'': Blackwell-only bf16 MNNVL CuTe DSL
+          backend; also fuses the MoE finalize and the shared-expert add into the collective when the MoE runner can defer
+          them. Fuses allreduce with Residual + RMSNorm for supported MoE models.'
         option_strings:
         - --sglang-flashinfer-allreduce-fusion-backend
         type:
@@ -8549,11 +8766,14 @@ schema:
       - default: null
         dest: sglang_speculative_draft_window_size
         group: options
-        help: Sliding window size for the draft model. Honored by Llama EAGLE-3 (`LlamaForCausalLMEagle3`) and DFLASH only;
-          other EAGLE-3 backends (e.g. MLA-based drafters) silently ignore it. For Llama EAGLE-3, the drafter only attends
-          to the most recent N keys (verifier hidden states + its own outputs); the verifier is unaffected. For DFLASH, the
-          draft worker keeps a recent target-token window in its local KV cache (paged backends may retain up to one extra
-          page on the left for alignment). Default is full attention/context.
+        help: Sliding window size for the draft model. Honored by Llama EAGLE-3 (`LlamaForCausalLMEagle3`), DFLASH, and the
+          built-in EAGLE/MTP draft-decode path on the Triton and FlashInfer draft backends; other EAGLE-3 backends (e.g. MLA-based
+          drafters) silently ignore it. For Llama EAGLE-3, the drafter only attends to the most recent N keys (verifier hidden
+          states + its own outputs); the verifier is unaffected. For DFLASH, the draft worker keeps a recent target-token
+          window in its local KV cache (paged backends may retain up to one extra page on the left for alignment). For the
+          built-in EAGLE/MTP draft, each draft-decode step attends to a --speculative-draft-sink-size sink plus the most recent
+          N tokens, leaving the target verify pass unchanged; it is ignored (with a warning) if the draft model has a native
+          sliding window of its own. Default is full attention/context.
         option_strings:
         - --sglang-speculative-draft-window-size
         type:
@@ -9174,17 +9394,6 @@ schema:
           $callable: argparse._StoreTrueAction
         const: true
         default: false
-        dest: sglang_elastic_ep_rejoin
-        group: options
-        help: '[Deprecated] Alias for --elastic-ep-join-mode recover.'
-        nargs: 0
-        option_strings:
-        - --sglang-elastic-ep-rejoin
-        type: null
-      - action:
-          $callable: argparse._StoreTrueAction
-        const: true
-        default: false
         dest: sglang_disable_flashinfer_cutlass_moe_fp4_allgather
         group: options
         help: Disables quantize before all-gather for flashinfer cutlass moe.
@@ -9528,12 +9737,13 @@ schema:
           - shm
           - sim
           - simm
+          - tensorcast
         default: null
         dest: sglang_hicache_storage_backend
         group: options
         help: 'The storage backend for hierarchical KV cache. Built-in backends: file, mooncake, npu_memcache, hf3fs, nixl,
-          aibrix. For dynamic backend, use --hicache-storage-backend-extra-config to specify: backend_name (custom name),
-          module_path (Python module path), class_name (backend class name).'
+          aibrix, tensorcast. For dynamic backend, use --hicache-storage-backend-extra-config to specify: backend_name (custom
+          name), module_path (Python module path), class_name (backend class name).'
         option_strings:
         - --sglang-hicache-storage-backend
         type:
@@ -9794,17 +10004,6 @@ schema:
         - --sglang-mm-feature-transport
         type:
           $callable: builtins.str
-      - action:
-          $callable: argparse._StoreTrueAction
-        const: true
-        default: false
-        dest: sglang_keep_mm_feature_on_device
-        group: options
-        help: Deprecated. Use --mm-feature-transport=cuda_ipc for bounded GPU-resident multimodal feature transport.
-        nargs: 0
-        option_strings:
-        - --sglang-keep-mm-feature-on-device
-        type: null
       - action:
           $callable: argparse._StoreTrueAction
         const: true
@@ -10243,12 +10442,13 @@ schema:
           $set:
           - cpu_tensor
           - host_pool
+          - none
         default: null
         dest: sglang_disaggregation_decode_retraction_backup
         group: options
-        help: Storage backend for KV preserved across PD decode retraction. 'cpu_tensor' uses per-request CPU tensors. 'host_pool'
-          uses a reserved HiCache pool and does not fall back on exhaustion. If omitted, the backend is inferred from the
-          decode KV pool.
+        help: 'Storage backend for KV preserved across PD decode retraction. ''cpu_tensor'' uses per-request CPU tensors.
+          ''host_pool'' uses a reserved HiCache pool and does not fall back on exhaustion. ''none'' keeps no backup: a retracted
+          request is aborted with 503 for the client to retry. If omitted, the backend is inferred from the decode KV pool.'
         option_strings:
         - --sglang-disaggregation-decode-retraction-backup
         type:
@@ -10931,6 +11131,215 @@ schema:
         type:
           $callable: builtins.str
       - action:
+          $callable: argparse.BooleanOptionalAction
+        default: null
+        dest: sglang_ple_offload_embedding
+        group: options
+        help: Offload Qwen4 PLE n-gram embedding weights to CPU pinned memory. Enabled by default for BF16 Qwen4-Exp on CUDA;
+          use --no-ple-offload-embedding to disable.
+        nargs: 0
+        option_strings:
+        - --sglang-ple-offload-embedding
+        - --no-sglang-ple-offload-embedding
+        type: null
+      - choices:
+          $set:
+          - file
+          - pinned
+        default: pinned
+        dest: sglang_ple_offload_backend
+        group: options
+        help: Host storage for the offloaded Qwen4 PLE n-gram table. 'pinned' (default) uses CPU pinned memory. 'file' maps
+          a sparse file under --ple-offload-dir and lets the gather kernel read it directly; use it on unified-memory devices
+          (e.g. GB10 / DGX Spark) where pinned host memory comes out of the same pool as the model weights. Requires a device
+          that reports cudaDevAttrPageableMemoryAccessUsesHostPageTables.
+        option_strings:
+        - --sglang-ple-offload-backend
+        type:
+          $callable: builtins.str
+      - default: null
+        dest: sglang_ple_offload_dir
+        group: options
+        help: Directory for the file-backed PLE table when --ple-offload-backend is 'file'. Defaults to $SGLANG_CACHE_DIR/ple/<model
+          path>, one directory per checkpoint. The file is sparse and reused across restarts; put it on fast local storage
+          (NVMe).
+        option_strings:
+        - --sglang-ple-offload-dir
+        type:
+          $callable: builtins.str
+      - action:
+          $callable: argparse._StoreTrueAction
+        const: true
+        default: false
+        dest: sglang_disaggregation_enable_kv_checksum
+        group: options
+        help: Compute an Adler-32 checksum over each request's KV pages on prefill and verify it on decode. Enable on both
+          prefill and decode engines. A mismatch aborts the request, or raises in CI. Disabled by default.
+        nargs: 0
+        option_strings:
+        - --sglang-disaggregation-enable-kv-checksum
+        type: null
+      - action:
+          $callable: argparse._StoreTrueAction
+        const: true
+        default: false
+        dest: sglang_enable_pd_role_switch
+        group: options
+        help: Allow runtime prefill<->decode role switch via /pd_role_switch (PD mode).
+        nargs: 0
+        option_strings:
+        - --sglang-enable-pd-role-switch
+        type: null
+      - default: 2048
+        dest: sglang_speculative_domino_candidate_pool_size
+        group: options
+        help: Domino only. Size of the approximate block-shared base-logit candidate pool. Set to 0 to score the full vocabulary.
+        option_strings:
+        - --sglang-speculative-domino-candidate-pool-size
+        type:
+          $callable: builtins.int
+      - choices:
+          $set:
+          - auto
+          - bf16
+          - mxfp8
+          - nvfp4
+        default: null
+        dest: sglang_flashinfer_a2a_dispatch_type
+        group: options
+        help: Select FlashInfer A2A dispatcher activation dtype.
+        option_strings:
+        - --sglang-flashinfer-a2a-dispatch-type
+        type:
+          $callable: builtins.str
+      - default: null
+        dest: sglang_cuda_graph_max_seq_len_prefill
+        group: options
+        help: Longest sequence a prefill cuda graph replay admits; longer batches run eager prefill. Folds into cuda_graph_config[prefill].max_seq_len.
+        option_strings:
+        - --sglang-cuda-graph-max-seq-len-prefill
+        type:
+          $callable: builtins.int
+      - choices:
+          $set:
+          - auto
+          - fp8_e4m3
+          - nvfp4
+        default: auto
+        dest: sglang_prefill_kv_cache_dequant_dtype
+        group: options
+        help: Online dequantization dtype used by prefill attention when --kv-cache-dtype=nvfp4. 'nvfp4' reads the packed
+          cache directly without additional dequantization; 'fp8_e4m3' dequantizes it into a temporary FP8 workspace. This
+          does not change the stored KV-cache dtype. 'auto' selects NVFP4 without additional dequantization on SM100 and FP8
+          E4M3 otherwise.
+        option_strings:
+        - --sglang-prefill-kv-cache-dequant-dtype
+        type:
+          $callable: builtins.str
+      - choices:
+          $set:
+          - auto
+          - flashmla
+          - trtllm
+        default: auto
+        dest: sglang_dsv4_attn_backend
+        group: options
+        help: DeepSeek V4 attention backend. 'auto' (default) resolves to 'flashmla'. 'trtllm' (opt-in, SM100/SM103 with FP8
+          KV cache) switches the SWA/compressed KV pools to a uniform 512-dim FP8 layout and runs decode and sparse prefill
+          through the flashinfer trtllm-gen sparse MLA kernel. The backend choice is shared by prefill and decode.
+        option_strings:
+        - --sglang-dsv4-attn-backend
+        type:
+          $callable: builtins.str
+      - default: null
+        dest: sglang_otlp_service_name
+        group: options
+        help: Service name for OTLP traces (displayed as 'service.name' in trace backends). If unset, falls back to the OTEL_SERVICE_NAME
+          env var, then to 'sglang'.
+        option_strings:
+        - --sglang-otlp-service-name
+        type:
+          $callable: builtins.str
+      - default: 0.8
+        dest: sglang_hicache_host_memory_fraction
+        group: options
+        help: 'Fraction of the available host memory, bounded by visible cgroup memory.max/memory.high or v1 memory limits
+          (after a 10 GiB reserve) that the HiCache host pools of all ranks on this machine may use. Applies only when neither
+          --hicache-ratio nor --hicache-size is set: the default ratio is then reduced until the pools fit. Lower it when
+          several engines share a memory cgroup.'
+        option_strings:
+        - --sglang-hicache-host-memory-fraction
+        type:
+          $callable: builtins.float
+      - action:
+          $callable: argparse._StoreTrueAction
+        const: true
+        default: false
+        dest: sglang_enable_linker_mla_dedup
+        group: options
+        help: Load replicated MLA KV on rank 0 and broadcast each layer with the Mooncake linker.
+        nargs: 0
+        option_strings:
+        - --sglang-enable-linker-mla-dedup
+        type: null
+      - default: null
+        dest: sglang_swa_prefix_tails
+        group: options
+        help: 'When the SWA KV pool is sized from the request cap (DeepSeek-V4 family), how many radix-cached prefix tails
+          it keeps room for. Each tail is one sliding window plus one page. Default: 4 x max_running_requests per attention-DP
+          rank, 0 when the radix cache is disabled.'
+        option_strings:
+        - --sglang-swa-prefix-tails
+        type:
+          $callable: builtins.int
+      - action:
+          $callable: argparse._StoreTrueAction
+        const: true
+        default: false
+        dest: sglang_enable_encoder_swa_bounded_replay
+        group: options
+        help: 'DeepSeek-V4.1 encoder SWA bounded replay: cache Main KV and Indexer keys only, rebuild request-owned SWA windows
+          on prefix hits. Experimental; CUDA only.'
+        nargs: 0
+        option_strings:
+        - --sglang-enable-encoder-swa-bounded-replay
+        type: null
+      - action:
+          $callable: argparse._StoreTrueAction
+        const: true
+        default: false
+        dest: sglang_enable_decoder_swa_bounded_replay
+        group: options
+        help: 'DeepSeek-V4.1 decoder SWA bounded replay: after the last kv_source layer, run the remaining layers over only
+          the last window_size tokens of a prefill. Main and indexer KV stay exact; nothing is replayed. Deterministic for
+          a fixed prompt and chunk size.'
+        nargs: 0
+        option_strings:
+        - --sglang-enable-decoder-swa-bounded-replay
+        type: null
+      - action:
+          $callable: argparse._StoreTrueAction
+        const: true
+        default: false
+        dest: sglang_enable_response_store
+        group: options
+        help: Enable in-memory Responses storage for retrieval, chaining, and background requests. Disabled by default; unsupported
+          with prefill-decode disaggregation. Storage has no TTL or size limit.
+        nargs: 0
+        option_strings:
+        - --sglang-enable-response-store
+        type: null
+      - default: 0.0
+        dest: sglang_disaggregation_decode_host_receive_threshold
+        group: options
+        help: Device token usage fraction at which incoming KV is received in the decode retraction host pool, excluding evictable
+          cache pages. Range [0, 1]; 0 disables host receive. Size with --hicache-size or --hicache-ratio; requires dense
+          MHA and a transfer backend that supports host destinations. No built-in backend currently supports this.
+        option_strings:
+        - --sglang-disaggregation-decode-host-receive-threshold
+        type:
+          $callable: builtins.float
+      - action:
           $callable: argparse._StoreTrueAction
         const: true
         default: false
@@ -10995,65 +11404,40 @@ schema:
         - --sglang-true-on-policy-contract
         type:
           $callable: builtins.str
-      - action:
-          $callable: argparse.BooleanOptionalAction
-        default: null
-        dest: sglang_ple_offload_embedding
-        group: options
-        help: Offload Qwen4 PLE n-gram embedding weights to CPU pinned memory. Enabled by default for BF16 Qwen4-Exp on CUDA;
-          use --no-ple-offload-embedding to disable.
-        nargs: 0
-        option_strings:
-        - --sglang-ple-offload-embedding
-        - --no-sglang-ple-offload-embedding
-        type: null
-      - choices:
-          $set:
-          - file
-          - pinned
-        default: pinned
-        dest: sglang_ple_offload_backend
-        group: options
-        help: Host storage for the offloaded Qwen4 PLE n-gram table. 'pinned' (default) uses CPU pinned memory. 'file' maps
-          a sparse file under --ple-offload-dir and lets the gather kernel read it directly; use it on unified-memory devices
-          (e.g. GB10 / DGX Spark) where pinned host memory comes out of the same pool as the model weights. Requires a device
-          that reports cudaDevAttrPageableMemoryAccessUsesHostPageTables.
-        option_strings:
-        - --sglang-ple-offload-backend
-        type:
-          $callable: builtins.str
       - default: null
-        dest: sglang_ple_offload_dir
+        dest: sglang_speculative_draft_sink_size
         group: options
-        help: Directory for the file-backed PLE table when --ple-offload-backend is 'file'. Defaults to $SGLANG_CACHE_DIR/ple/<model
-          path>, one directory per checkpoint. The file is sparse and reused across restarts; put it on fast local storage
-          (NVMe).
+        help: Number of leading 'attention sink' tokens the draft always attends to, in addition to the --speculative-draft-window-size
+          recent window (StreamingLLM-style). Honored only by the built-in EAGLE/MTP draft-decode path on the Triton and FlashInfer
+          draft backends; the Llama EAGLE-3 and DFLASH windows ignore it. 0/unset => pure recent window. Requires --speculative-draft-window-size.
         option_strings:
-        - --sglang-ple-offload-dir
-        type:
-          $callable: builtins.str
-      - default: 2048
-        dest: sglang_speculative_domino_candidate_pool_size
-        group: options
-        help: Domino only. Size of the approximate block-shared base-logit candidate pool. Set to 0 to score the full vocabulary.
-        option_strings:
-        - --sglang-speculative-domino-candidate-pool-size
+        - --sglang-speculative-draft-sink-size
         type:
           $callable: builtins.int
-      - choices:
-          $set:
-          - auto
-          - bf16
-          - mxfp8
-          - nvfp4
-        default: null
-        dest: sglang_flashinfer_a2a_dispatch_type
+      - action:
+          $callable: argparse._StoreTrueAction
+        const: true
+        default: false
+        dest: sglang_disable_aiter_allreduce_fusion_in_prefill
         group: options
-        help: Select FlashInfer A2A dispatcher activation dtype.
+        help: Disable Aiter AllReduce Fusion for prefill batches (EXTEND / MIXED / SPLIT_PREFILL) while keeping it for decode.
+          Only meaningful with --enable-aiter-allreduce-fusion.
+        nargs: 0
         option_strings:
-        - --sglang-flashinfer-a2a-dispatch-type
-        type:
-          $callable: builtins.str
+        - --sglang-disable-aiter-allreduce-fusion-in-prefill
+        type: null
+      - action:
+          $callable: argparse._StoreTrueAction
+        const: true
+        default: false
+        dest: sglang_disable_aiter_allreduce_fusion_in_decode
+        group: options
+        help: Disable Aiter AllReduce Fusion for decode batches (DECODE / TARGET_VERIFY / draft-extend / IDLE) while keeping
+          it for prefill. Only meaningful with --enable-aiter-allreduce-fusion.
+        nargs: 0
+        option_strings:
+        - --sglang-disable-aiter-allreduce-fusion-in-decode
+        type: null
       - action:
           $callable: argparse._StoreTrueAction
         const: true
@@ -11065,37 +11449,20 @@ schema:
         option_strings:
         - --sglang-disable-draft-cuda-graph
         type: null
-      - choices:
-          $set:
-          - auto
-          - flashmla
-          - trtllm
-        default: auto
-        dest: sglang_dsv4_attn_backend
+      - default: 300
+        dest: sglang_grpc_response_timeout_secs
         group: options
-        help: DeepSeek V4 attention backend. 'auto' (default) resolves to 'flashmla'. 'trtllm' (opt-in, SM100/SM103 with FP8
-          KV cache) switches the SWA/compressed KV pools to a uniform 512-dim FP8 layout and runs decode and sparse prefill
-          through the flashinfer trtllm-gen sparse MLA kernel. The backend choice is shared by prefill and decode.
+        help: Timeout in seconds waiting for each native gRPC response chunk, including the first. Must be positive. Defaults
+          to 300.
         option_strings:
-        - --sglang-dsv4-attn-backend
+        - --sglang-grpc-response-timeout-secs
         type:
-          $callable: builtins.str
-      - action:
-          $callable: argparse._StoreTrueAction
-        const: true
-        default: false
-        dest: sglang_enable_response_store
-        group: options
-        help: Enable in-memory Responses storage for retrieval, chaining, and background requests. Disabled by default; unsupported
-          with prefill-decode disaggregation. Storage has no TTL or size limit.
-        nargs: 0
-        option_strings:
-        - --sglang-enable-response-store
-        type: null
+          $callable: builtins.int
       - choices:
           $set:
           - ascend
           - flashinfer
+          - intel_xpu
           - pytorch
         default: null
         dest: sglang_sampling_backend
@@ -11113,14 +11480,17 @@ schema:
           - deepseek-r1
           - deepseek-v3
           - deepseek-v4
+          - deepseek-v41
           - dots
           - gemma4
+          - gigachat35
           - glm45
           - gpt-oss
           - granite_thinking_parser
           - hunyuan
           - inkling
           - interns1
+          - iquest_q1
           - k2_horizon
           - kimi
           - kimi_k2
@@ -11143,10 +11513,11 @@ schema:
         dest: sglang_reasoning_parser
         group: options
         help: 'Specify the parser for reasoning models. Use ''auto'' to detect from chat template. Options include: [''apertus2509'',
-          ''deepseek-r1'', ''deepseek-v3'', ''deepseek-v4'', ''dots'', ''glm45'', ''ling3'', ''hunyuan'', ''gpt-oss'', ''k2_horizon'',
-          ''kimi'', ''kimi_k2'', ''kimi_k3'', ''mimo'', ''muse'', ''poolside_v1'', ''qwen3'', ''qwen3-thinking'', ''minimax'',
-          ''minimax-append-think'', ''minimax-m3'', ''nanbeige'', ''step3'', ''step3p5'', ''mistral'', ''nemotron_3'', ''granite_thinking_parser'',
-          ''interns1'', ''gemma4'', ''inkling'', ''cohere_command4''].'
+          ''deepseek-r1'', ''deepseek-v3'', ''deepseek-v4'', ''deepseek-v41'', ''dots'', ''glm45'', ''ling3'', ''hunyuan'',
+          ''gpt-oss'', ''k2_horizon'', ''kimi'', ''kimi_k2'', ''kimi_k3'', ''mimo'', ''muse'', ''poolside_v1'', ''qwen3'',
+          ''qwen3-thinking'', ''minimax'', ''minimax-append-think'', ''minimax-m3'', ''nanbeige'', ''step3'', ''step3p5'',
+          ''mistral'', ''nemotron_3'', ''granite_thinking_parser'', ''interns1'', ''gemma4'', ''inkling'', ''iquest_q1'',
+          ''cohere_command4'', ''gigachat35''].'
         option_strings:
         - --sglang-reasoning-parser
         type:
@@ -11160,9 +11531,11 @@ schema:
           - deepseekv31
           - deepseekv32
           - deepseekv4
+          - deepseekv41
           - dots
           - gemma4
           - gigachat3
+          - gigachat35
           - glm
           - glm45
           - glm47
@@ -11171,6 +11544,7 @@ schema:
           - hunyuan
           - inkling
           - interns1
+          - iquest_q1
           - k2_horizon
           - kimi_k2
           - kimi_k2_raw_id
@@ -11199,10 +11573,11 @@ schema:
         group: options
         help: 'Specify the parser for handling tool-call interactions. Use ''auto'' to detect from chat template. Options
           include: [''apertus2509'', ''cohere_command4'', ''deepseekv3'', ''deepseekv31'', ''deepseekv32'', ''deepseekv4'',
-          ''dots'', ''glm'', ''glm45'', ''glm47'', ''gpt-oss'', ''k2_horizon'', ''kimi_k2'', ''kimi_k3'', ''kimi_k2_raw_id'',
-          ''lfm2'', ''ling3'', ''llama3'', ''mimo'', ''minicpm5'', ''mistral'', ''muse'', ''poolside_v1'', ''pythonic'', ''qwen'',
-          ''qwen25'', ''qwen3_coder'', ''spark25'', ''step3'', ''step3p5'', ''minimax-m2'', ''minimax-m3'', ''nanbeige'',
-          ''trinity'', ''interns1'', ''hermes'', ''hunyuan'', ''gigachat3'', ''gemma4'', ''inkling''].'
+          ''deepseekv41'', ''dots'', ''glm'', ''glm45'', ''glm47'', ''gpt-oss'', ''k2_horizon'', ''kimi_k2'', ''kimi_k3'',
+          ''kimi_k2_raw_id'', ''lfm2'', ''ling3'', ''llama3'', ''mimo'', ''minicpm5'', ''mistral'', ''muse'', ''poolside_v1'',
+          ''pythonic'', ''qwen'', ''qwen25'', ''qwen3_coder'', ''spark25'', ''step3'', ''step3p5'', ''minimax-m2'', ''minimax-m3'',
+          ''nanbeige'', ''trinity'', ''interns1'', ''hermes'', ''hunyuan'', ''gigachat3'', ''gigachat35'', ''gemma4'', ''inkling'',
+          ''iquest_q1''].'
         option_strings:
         - --sglang-tool-call-parser
         type:
@@ -11518,7 +11893,6 @@ schema:
           - auto
           - bf16
           - bfloat16
-          - fp4_e2m1
           - fp4_mx_block16
           - fp8_e4m3
           - fp8_e5m2
@@ -11711,6 +12085,7 @@ schema:
           - priority
           - random
           - routing-key
+          - shortest-prefill-first
         default: ==SUPPRESS==
         dest: eval_sglang_schedule_policy
         group: options
@@ -11845,12 +12220,15 @@ schema:
           - lru
           - priority
           - slru
+          - tlru
         default: ==SUPPRESS==
         dest: eval_sglang_radix_eviction_policy
         group: options
         help: The eviction policy of radix trees. 'lru' stands for Least Recently Used, 'lfu' stands for Least Frequently
-          Used, 'slru' stands for Segmented Least Recently Used, and 'priority' evicts lower-priority requests first. See
-          https://docs.sglang.io/docs/advanced_features/radix_eviction_policy for what each policy optimizes for.
+          Used, 'slru' stands for Segmented Least Recently Used, 'priority' evicts lower-priority requests first, and 'tlru'
+          stands for Tail-Optimized LRU (arXiv:2510.15152), which evicts the part of a conversation that cannot affect tail
+          TTFT before falling back to LRU. See https://docs.sglang.io/docs/advanced_features/radix_eviction_policy for what
+          each policy optimizes for.
         option_strings:
         - --eval-sglang-radix-eviction-policy
         type:
@@ -11859,7 +12237,8 @@ schema:
         dest: eval_sglang_radix_eviction_policy_config
         group: options
         help: 'Tuning parameters for --radix-eviction-policy, as a json object passed to the policy as keyword arguments.
-          Only ''slru'' takes any today: protected_threshold (int, default 2), e.g. ''{"protected_threshold": 4}''. An unrecognized
+          ''slru'' takes protected_threshold (int, default 2), e.g. ''{"protected_threshold": 4}''; ''tlru'' takes threshold
+          and next_prompt_estimate (ints, tokens), e.g. ''{"threshold": 4096, "next_prompt_estimate": 512}''. An unrecognized
           key fails at startup, naming the key and the policy. See https://docs.sglang.io/docs/advanced_features/radix_eviction_policy#policy-parameters
           for the full parameter list.'
         option_strings:
@@ -11911,9 +12290,8 @@ schema:
         dest: eval_sglang_enable_unified_memory
         group: options
         help: Replace the statically-partitioned hybrid-model pools (full-attn KV + SWA/Mamba state) with one byte buffer
-          split dynamically between sub-pools. Requires the Triton attention / linear-attn / Mamba backends. PD disaggregation
-          is supported over mooncake at equal attention TP with pp=1; not yet compatible with hierarchical / host-tiered KV
-          cache, prefill cuda-graph capture, or speculative decoding other than DSPARK.
+          split dynamically between sub-pools. Requires the Triton attention / linear-attn / Mamba backends. Supported PD-disaggregation
+          and speculative-decoding configurations are validated at startup.
         nargs: 0
         option_strings:
         - --eval-sglang-enable-unified-memory
@@ -12216,6 +12594,15 @@ schema:
         - --eval-sglang-enable-shared-experts-attn-tp
         - --no-eval-sglang-enable-shared-experts-attn-tp
         type: null
+      - default: ==SUPPRESS==
+        dest: eval_sglang_shared_experts_tp_size
+        group: options
+        help: Shared-expert TP size for Kimi-K3 with an expert-parallel all-to-all backend. Must divide attention TP size.
+          Overrides --enable-shared-experts-attn-tp when set; 1 replicates the weights.
+        option_strings:
+        - --eval-sglang-shared-experts-tp-size
+        type:
+          $callable: builtins.int
       - action:
           $callable: argparse.BooleanOptionalAction
         default: ==SUPPRESS==
@@ -12509,7 +12896,7 @@ schema:
       - default: ==SUPPRESS==
         dest: eval_sglang_admin_api_key
         group: options
-        help: Set admin API key for sensitive management endpoints (e.g. /clear_hicache_storage_backend). When set, admin
+        help: Set admin API key for sensitive management endpoints (e.g. /hicache/storage-backend/clear). When set, admin
           endpoints require this key and do NOT accept --api-key.
         option_strings:
         - --eval-sglang-admin-api-key
@@ -12540,6 +12927,17 @@ schema:
         - --eval-sglang-chat-template
         type:
           $callable: builtins.str
+      - action:
+          $callable: argparse.BooleanOptionalAction
+        default: ==SUPPRESS==
+        dest: eval_sglang_trust_request_chat_template
+        group: options
+        help: Allow a request to override the server chat template via its chat_template_kwargs. Off by default for safety.
+        nargs: 0
+        option_strings:
+        - --eval-sglang-trust-request-chat-template
+        - --no-eval-sglang-trust-request-chat-template
+        type: null
       - default: ==SUPPRESS==
         dest: eval_sglang_hf_chat_template_name
         group: options
@@ -13129,6 +13527,14 @@ schema:
         - --eval-sglang-constrained-json-disable-any-whitespace
         - --no-eval-sglang-constrained-json-disable-any-whitespace
         type: null
+      - default: ==SUPPRESS==
+        dest: eval_sglang_constrained_json_max_whitespace_cnt
+        group: options
+        help: (xgrammar backend only) Max consecutive whitespace chars allowed in JSON constrained output. None means unbounded.
+        option_strings:
+        - --eval-sglang-constrained-json-max-whitespace-cnt
+        type:
+          $callable: builtins.int
       - choices:
           $set:
           - aiter
@@ -13539,6 +13945,19 @@ schema:
         - --eval-sglang-cuda-graph-bs-prefill
         type:
           $callable: builtins.int
+      - default: ==SUPPRESS==
+        dest: eval_sglang_cuda_graph_prefill_max_context
+        group: options
+        help: "Maximum context length supported by DeepSeek-V4 breakable/full prefill CUDA graphs. Context-shaped attention\
+          \ metadata and indexer logits are allocated at this fixed size instead of the model maximum. Larger live contexts\
+          \ fall back to eager.\n\nSupports standard SI suffixes (k, M, G, T) and IEC suffixes\n    (Ki, Mi, Gi, Ti). Suffixes\
+          \ are case-sensitive.\n\n    Decimals are allowed for SI suffixes only.\n\n    Examples:\n        '1k' -> 1000 \
+          \     '1M' -> 1000000    '25.6k' -> 25600\n        '1Ki' -> 1024     '1Mi' -> 1048576\n    "
+        option_strings:
+        - --eval-sglang-cuda-graph-prefill-max-context
+        - --eval-sglang-context-bucket
+        type:
+          $callable: sglang.srt.utils.common.human_readable_int
       - choices:
           $set:
           - eager
@@ -13754,7 +14173,7 @@ schema:
         default: ==SUPPRESS==
         dest: eval_sglang_enable_mscclpp
         group: options
-        help: Enable using mscclpp for small messages for all-reduce kernel and fall back to NCCL.
+        help: Enable MSCCL++ for tuned AllReduce and AllGather messages, with NCCL fallback.
         nargs: 0
         option_strings:
         - --eval-sglang-enable-mscclpp
@@ -13797,6 +14216,24 @@ schema:
         - --eval-sglang-pre-warm-nccl
         - --no-eval-sglang-pre-warm-nccl
         type: null
+      - choices:
+          $set:
+          - ar
+          - auto
+          - rs
+          - rs+rsv
+          - rsv
+        default: ==SUPPRESS==
+        dest: eval_sglang_boundary_reduction
+        group: options
+        help: 'Select FFN boundary reduction: ar uses all-reduce then token redistribution; rs and rsv permit fixed-size and
+          variable-size reduce-scatter respectively; rs+rsv permits both (RSv first). Unsupported paths fall back to ar. The
+          option applies to the FFN stages of decoders built with stage boundaries, where auto resolves the model default;
+          other models ignore it. Required attention and MoE collectives and all-reduce fusion are unaffected.'
+        option_strings:
+        - --eval-sglang-boundary-reduction
+        type:
+          $callable: builtins.str
       - action:
           $callable: argparse.BooleanOptionalAction
         default: ==SUPPRESS==
@@ -13822,6 +14259,7 @@ schema:
       - choices:
           $set:
           - auto
+          - cutedsl
           - mnnvl
           - trtllm
         default: ==SUPPRESS==
@@ -13830,8 +14268,9 @@ schema:
         help: 'Enable FlashInfer allreduce fusion and choose backend. Requires SM90 or SM10X NVIDIA GPUs. Defaults to auto.
           ''auto'': choose mnnvl on Blackwell (SM100/SM103) systems (single- and multi-node) and trtllm on SM90 single-node
           systems. ''trtllm'': available on single-node systems only. ''mnnvl'': available on SM90 single-node systems and
-          SM100/SM103 single-node or multi-node systems via MNNVL fabric. Fuses allreduce with Residual + RMSNorm for supported
-          MoE models.'
+          SM100/SM103 single-node or multi-node systems via MNNVL fabric. ''cutedsl'': Blackwell-only bf16 MNNVL CuTe DSL
+          backend; also fuses the MoE finalize and the shared-expert add into the collective when the MoE runner can defer
+          them. Fuses allreduce with Residual + RMSNorm for supported MoE models.'
         option_strings:
         - --eval-sglang-flashinfer-allreduce-fusion-backend
         type:
@@ -14108,11 +14547,14 @@ schema:
       - default: ==SUPPRESS==
         dest: eval_sglang_speculative_draft_window_size
         group: options
-        help: Sliding window size for the draft model. Honored by Llama EAGLE-3 (`LlamaForCausalLMEagle3`) and DFLASH only;
-          other EAGLE-3 backends (e.g. MLA-based drafters) silently ignore it. For Llama EAGLE-3, the drafter only attends
-          to the most recent N keys (verifier hidden states + its own outputs); the verifier is unaffected. For DFLASH, the
-          draft worker keeps a recent target-token window in its local KV cache (paged backends may retain up to one extra
-          page on the left for alignment). Default is full attention/context.
+        help: Sliding window size for the draft model. Honored by Llama EAGLE-3 (`LlamaForCausalLMEagle3`), DFLASH, and the
+          built-in EAGLE/MTP draft-decode path on the Triton and FlashInfer draft backends; other EAGLE-3 backends (e.g. MLA-based
+          drafters) silently ignore it. For Llama EAGLE-3, the drafter only attends to the most recent N keys (verifier hidden
+          states + its own outputs); the verifier is unaffected. For DFLASH, the draft worker keeps a recent target-token
+          window in its local KV cache (paged backends may retain up to one extra page on the left for alignment). For the
+          built-in EAGLE/MTP draft, each draft-decode step attends to a --speculative-draft-sink-size sink plus the most recent
+          N tokens, leaving the target verify pass unchanged; it is ignored (with a warning) if the draft model has a native
+          sliding window of its own. Default is full attention/context.
         option_strings:
         - --eval-sglang-speculative-draft-window-size
         type:
@@ -14732,17 +15174,6 @@ schema:
       - action:
           $callable: argparse.BooleanOptionalAction
         default: ==SUPPRESS==
-        dest: eval_sglang_elastic_ep_rejoin
-        group: options
-        help: '[Deprecated] Alias for --elastic-ep-join-mode recover.'
-        nargs: 0
-        option_strings:
-        - --eval-sglang-elastic-ep-rejoin
-        - --no-eval-sglang-elastic-ep-rejoin
-        type: null
-      - action:
-          $callable: argparse.BooleanOptionalAction
-        default: ==SUPPRESS==
         dest: eval_sglang_disable_flashinfer_cutlass_moe_fp4_allgather
         group: options
         help: Disables quantize before all-gather for flashinfer cutlass moe.
@@ -15087,12 +15518,13 @@ schema:
           - shm
           - sim
           - simm
+          - tensorcast
         default: ==SUPPRESS==
         dest: eval_sglang_hicache_storage_backend
         group: options
         help: 'The storage backend for hierarchical KV cache. Built-in backends: file, mooncake, npu_memcache, hf3fs, nixl,
-          aibrix. For dynamic backend, use --hicache-storage-backend-extra-config to specify: backend_name (custom name),
-          module_path (Python module path), class_name (backend class name).'
+          aibrix, tensorcast. For dynamic backend, use --hicache-storage-backend-extra-config to specify: backend_name (custom
+          name), module_path (Python module path), class_name (backend class name).'
         option_strings:
         - --eval-sglang-hicache-storage-backend
         type:
@@ -15353,17 +15785,6 @@ schema:
         - --eval-sglang-mm-feature-transport
         type:
           $callable: builtins.str
-      - action:
-          $callable: argparse.BooleanOptionalAction
-        default: ==SUPPRESS==
-        dest: eval_sglang_keep_mm_feature_on_device
-        group: options
-        help: Deprecated. Use --mm-feature-transport=cuda_ipc for bounded GPU-resident multimodal feature transport.
-        nargs: 0
-        option_strings:
-        - --eval-sglang-keep-mm-feature-on-device
-        - --no-eval-sglang-keep-mm-feature-on-device
-        type: null
       - action:
           $callable: argparse.BooleanOptionalAction
         default: ==SUPPRESS==
@@ -15802,12 +16223,13 @@ schema:
           $set:
           - cpu_tensor
           - host_pool
+          - none
         default: ==SUPPRESS==
         dest: eval_sglang_disaggregation_decode_retraction_backup
         group: options
-        help: Storage backend for KV preserved across PD decode retraction. 'cpu_tensor' uses per-request CPU tensors. 'host_pool'
-          uses a reserved HiCache pool and does not fall back on exhaustion. If omitted, the backend is inferred from the
-          decode KV pool.
+        help: 'Storage backend for KV preserved across PD decode retraction. ''cpu_tensor'' uses per-request CPU tensors.
+          ''host_pool'' uses a reserved HiCache pool and does not fall back on exhaustion. ''none'' keeps no backup: a retracted
+          request is aborted with 503 for the client to retry. If omitted, the backend is inferred from the decode KV pool.'
         option_strings:
         - --eval-sglang-disaggregation-decode-retraction-backup
         type:
@@ -16492,6 +16914,215 @@ schema:
       - action:
           $callable: argparse.BooleanOptionalAction
         default: ==SUPPRESS==
+        dest: eval_sglang_ple_offload_embedding
+        group: options
+        help: Offload Qwen4 PLE n-gram embedding weights to CPU pinned memory. Enabled by default for BF16 Qwen4-Exp on CUDA;
+          use --no-ple-offload-embedding to disable.
+        nargs: 0
+        option_strings:
+        - --eval-sglang-ple-offload-embedding
+        - --no-eval-sglang-ple-offload-embedding
+        type: null
+      - choices:
+          $set:
+          - file
+          - pinned
+        default: ==SUPPRESS==
+        dest: eval_sglang_ple_offload_backend
+        group: options
+        help: Host storage for the offloaded Qwen4 PLE n-gram table. 'pinned' (default) uses CPU pinned memory. 'file' maps
+          a sparse file under --ple-offload-dir and lets the gather kernel read it directly; use it on unified-memory devices
+          (e.g. GB10 / DGX Spark) where pinned host memory comes out of the same pool as the model weights. Requires a device
+          that reports cudaDevAttrPageableMemoryAccessUsesHostPageTables.
+        option_strings:
+        - --eval-sglang-ple-offload-backend
+        type:
+          $callable: builtins.str
+      - default: ==SUPPRESS==
+        dest: eval_sglang_ple_offload_dir
+        group: options
+        help: Directory for the file-backed PLE table when --ple-offload-backend is 'file'. Defaults to $SGLANG_CACHE_DIR/ple/<model
+          path>, one directory per checkpoint. The file is sparse and reused across restarts; put it on fast local storage
+          (NVMe).
+        option_strings:
+        - --eval-sglang-ple-offload-dir
+        type:
+          $callable: builtins.str
+      - action:
+          $callable: argparse.BooleanOptionalAction
+        default: ==SUPPRESS==
+        dest: eval_sglang_disaggregation_enable_kv_checksum
+        group: options
+        help: Compute an Adler-32 checksum over each request's KV pages on prefill and verify it on decode. Enable on both
+          prefill and decode engines. A mismatch aborts the request, or raises in CI. Disabled by default.
+        nargs: 0
+        option_strings:
+        - --eval-sglang-disaggregation-enable-kv-checksum
+        - --no-eval-sglang-disaggregation-enable-kv-checksum
+        type: null
+      - action:
+          $callable: argparse.BooleanOptionalAction
+        default: ==SUPPRESS==
+        dest: eval_sglang_enable_pd_role_switch
+        group: options
+        help: Allow runtime prefill<->decode role switch via /pd_role_switch (PD mode).
+        nargs: 0
+        option_strings:
+        - --eval-sglang-enable-pd-role-switch
+        - --no-eval-sglang-enable-pd-role-switch
+        type: null
+      - default: ==SUPPRESS==
+        dest: eval_sglang_speculative_domino_candidate_pool_size
+        group: options
+        help: Domino only. Size of the approximate block-shared base-logit candidate pool. Set to 0 to score the full vocabulary.
+        option_strings:
+        - --eval-sglang-speculative-domino-candidate-pool-size
+        type:
+          $callable: builtins.int
+      - choices:
+          $set:
+          - auto
+          - bf16
+          - mxfp8
+          - nvfp4
+        default: ==SUPPRESS==
+        dest: eval_sglang_flashinfer_a2a_dispatch_type
+        group: options
+        help: Select FlashInfer A2A dispatcher activation dtype.
+        option_strings:
+        - --eval-sglang-flashinfer-a2a-dispatch-type
+        type:
+          $callable: builtins.str
+      - default: ==SUPPRESS==
+        dest: eval_sglang_cuda_graph_max_seq_len_prefill
+        group: options
+        help: Longest sequence a prefill cuda graph replay admits; longer batches run eager prefill. Folds into cuda_graph_config[prefill].max_seq_len.
+        option_strings:
+        - --eval-sglang-cuda-graph-max-seq-len-prefill
+        type:
+          $callable: builtins.int
+      - choices:
+          $set:
+          - auto
+          - fp8_e4m3
+          - nvfp4
+        default: ==SUPPRESS==
+        dest: eval_sglang_prefill_kv_cache_dequant_dtype
+        group: options
+        help: Online dequantization dtype used by prefill attention when --kv-cache-dtype=nvfp4. 'nvfp4' reads the packed
+          cache directly without additional dequantization; 'fp8_e4m3' dequantizes it into a temporary FP8 workspace. This
+          does not change the stored KV-cache dtype. 'auto' selects NVFP4 without additional dequantization on SM100 and FP8
+          E4M3 otherwise.
+        option_strings:
+        - --eval-sglang-prefill-kv-cache-dequant-dtype
+        type:
+          $callable: builtins.str
+      - choices:
+          $set:
+          - auto
+          - flashmla
+          - trtllm
+        default: ==SUPPRESS==
+        dest: eval_sglang_dsv4_attn_backend
+        group: options
+        help: DeepSeek V4 attention backend. 'auto' (default) resolves to 'flashmla'. 'trtllm' (opt-in, SM100/SM103 with FP8
+          KV cache) switches the SWA/compressed KV pools to a uniform 512-dim FP8 layout and runs decode and sparse prefill
+          through the flashinfer trtllm-gen sparse MLA kernel. The backend choice is shared by prefill and decode.
+        option_strings:
+        - --eval-sglang-dsv4-attn-backend
+        type:
+          $callable: builtins.str
+      - default: ==SUPPRESS==
+        dest: eval_sglang_otlp_service_name
+        group: options
+        help: Service name for OTLP traces (displayed as 'service.name' in trace backends). If unset, falls back to the OTEL_SERVICE_NAME
+          env var, then to 'sglang'.
+        option_strings:
+        - --eval-sglang-otlp-service-name
+        type:
+          $callable: builtins.str
+      - default: ==SUPPRESS==
+        dest: eval_sglang_hicache_host_memory_fraction
+        group: options
+        help: 'Fraction of the available host memory, bounded by visible cgroup memory.max/memory.high or v1 memory limits
+          (after a 10 GiB reserve) that the HiCache host pools of all ranks on this machine may use. Applies only when neither
+          --hicache-ratio nor --hicache-size is set: the default ratio is then reduced until the pools fit. Lower it when
+          several engines share a memory cgroup.'
+        option_strings:
+        - --eval-sglang-hicache-host-memory-fraction
+        type:
+          $callable: builtins.float
+      - action:
+          $callable: argparse.BooleanOptionalAction
+        default: ==SUPPRESS==
+        dest: eval_sglang_enable_linker_mla_dedup
+        group: options
+        help: Load replicated MLA KV on rank 0 and broadcast each layer with the Mooncake linker.
+        nargs: 0
+        option_strings:
+        - --eval-sglang-enable-linker-mla-dedup
+        - --no-eval-sglang-enable-linker-mla-dedup
+        type: null
+      - default: ==SUPPRESS==
+        dest: eval_sglang_swa_prefix_tails
+        group: options
+        help: 'When the SWA KV pool is sized from the request cap (DeepSeek-V4 family), how many radix-cached prefix tails
+          it keeps room for. Each tail is one sliding window plus one page. Default: 4 x max_running_requests per attention-DP
+          rank, 0 when the radix cache is disabled.'
+        option_strings:
+        - --eval-sglang-swa-prefix-tails
+        type:
+          $callable: builtins.int
+      - action:
+          $callable: argparse.BooleanOptionalAction
+        default: ==SUPPRESS==
+        dest: eval_sglang_enable_encoder_swa_bounded_replay
+        group: options
+        help: 'DeepSeek-V4.1 encoder SWA bounded replay: cache Main KV and Indexer keys only, rebuild request-owned SWA windows
+          on prefix hits. Experimental; CUDA only.'
+        nargs: 0
+        option_strings:
+        - --eval-sglang-enable-encoder-swa-bounded-replay
+        - --no-eval-sglang-enable-encoder-swa-bounded-replay
+        type: null
+      - action:
+          $callable: argparse.BooleanOptionalAction
+        default: ==SUPPRESS==
+        dest: eval_sglang_enable_decoder_swa_bounded_replay
+        group: options
+        help: 'DeepSeek-V4.1 decoder SWA bounded replay: after the last kv_source layer, run the remaining layers over only
+          the last window_size tokens of a prefill. Main and indexer KV stay exact; nothing is replayed. Deterministic for
+          a fixed prompt and chunk size.'
+        nargs: 0
+        option_strings:
+        - --eval-sglang-enable-decoder-swa-bounded-replay
+        - --no-eval-sglang-enable-decoder-swa-bounded-replay
+        type: null
+      - action:
+          $callable: argparse.BooleanOptionalAction
+        default: ==SUPPRESS==
+        dest: eval_sglang_enable_response_store
+        group: options
+        help: Enable in-memory Responses storage for retrieval, chaining, and background requests. Disabled by default; unsupported
+          with prefill-decode disaggregation. Storage has no TTL or size limit.
+        nargs: 0
+        option_strings:
+        - --eval-sglang-enable-response-store
+        - --no-eval-sglang-enable-response-store
+        type: null
+      - default: ==SUPPRESS==
+        dest: eval_sglang_disaggregation_decode_host_receive_threshold
+        group: options
+        help: Device token usage fraction at which incoming KV is received in the decode retraction host pool, excluding evictable
+          cache pages. Range [0, 1]; 0 disables host receive. Size with --hicache-size or --hicache-ratio; requires dense
+          MHA and a transfer backend that supports host destinations. No built-in backend currently supports this.
+        option_strings:
+        - --eval-sglang-disaggregation-decode-host-receive-threshold
+        type:
+          $callable: builtins.float
+      - action:
+          $callable: argparse.BooleanOptionalAction
+        default: ==SUPPRESS==
         dest: eval_sglang_enable_prefill_weight_versions
         group: options
         help: Enable returning the weight version that computed each prompt token's KV cache with responses, as meta_info['prefill_weight_versions'].
@@ -16554,65 +17185,40 @@ schema:
         - --eval-sglang-true-on-policy-contract
         type:
           $callable: builtins.str
+      - default: ==SUPPRESS==
+        dest: eval_sglang_speculative_draft_sink_size
+        group: options
+        help: Number of leading 'attention sink' tokens the draft always attends to, in addition to the --speculative-draft-window-size
+          recent window (StreamingLLM-style). Honored only by the built-in EAGLE/MTP draft-decode path on the Triton and FlashInfer
+          draft backends; the Llama EAGLE-3 and DFLASH windows ignore it. 0/unset => pure recent window. Requires --speculative-draft-window-size.
+        option_strings:
+        - --eval-sglang-speculative-draft-sink-size
+        type:
+          $callable: builtins.int
       - action:
           $callable: argparse.BooleanOptionalAction
         default: ==SUPPRESS==
-        dest: eval_sglang_ple_offload_embedding
+        dest: eval_sglang_disable_aiter_allreduce_fusion_in_prefill
         group: options
-        help: Offload Qwen4 PLE n-gram embedding weights to CPU pinned memory. Enabled by default for BF16 Qwen4-Exp on CUDA;
-          use --no-ple-offload-embedding to disable.
+        help: Disable Aiter AllReduce Fusion for prefill batches (EXTEND / MIXED / SPLIT_PREFILL) while keeping it for decode.
+          Only meaningful with --enable-aiter-allreduce-fusion.
         nargs: 0
         option_strings:
-        - --eval-sglang-ple-offload-embedding
-        - --no-eval-sglang-ple-offload-embedding
+        - --eval-sglang-disable-aiter-allreduce-fusion-in-prefill
+        - --no-eval-sglang-disable-aiter-allreduce-fusion-in-prefill
         type: null
-      - choices:
-          $set:
-          - file
-          - pinned
+      - action:
+          $callable: argparse.BooleanOptionalAction
         default: ==SUPPRESS==
-        dest: eval_sglang_ple_offload_backend
+        dest: eval_sglang_disable_aiter_allreduce_fusion_in_decode
         group: options
-        help: Host storage for the offloaded Qwen4 PLE n-gram table. 'pinned' (default) uses CPU pinned memory. 'file' maps
-          a sparse file under --ple-offload-dir and lets the gather kernel read it directly; use it on unified-memory devices
-          (e.g. GB10 / DGX Spark) where pinned host memory comes out of the same pool as the model weights. Requires a device
-          that reports cudaDevAttrPageableMemoryAccessUsesHostPageTables.
+        help: Disable Aiter AllReduce Fusion for decode batches (DECODE / TARGET_VERIFY / draft-extend / IDLE) while keeping
+          it for prefill. Only meaningful with --enable-aiter-allreduce-fusion.
+        nargs: 0
         option_strings:
-        - --eval-sglang-ple-offload-backend
-        type:
-          $callable: builtins.str
-      - default: ==SUPPRESS==
-        dest: eval_sglang_ple_offload_dir
-        group: options
-        help: Directory for the file-backed PLE table when --ple-offload-backend is 'file'. Defaults to $SGLANG_CACHE_DIR/ple/<model
-          path>, one directory per checkpoint. The file is sparse and reused across restarts; put it on fast local storage
-          (NVMe).
-        option_strings:
-        - --eval-sglang-ple-offload-dir
-        type:
-          $callable: builtins.str
-      - default: ==SUPPRESS==
-        dest: eval_sglang_speculative_domino_candidate_pool_size
-        group: options
-        help: Domino only. Size of the approximate block-shared base-logit candidate pool. Set to 0 to score the full vocabulary.
-        option_strings:
-        - --eval-sglang-speculative-domino-candidate-pool-size
-        type:
-          $callable: builtins.int
-      - choices:
-          $set:
-          - auto
-          - bf16
-          - mxfp8
-          - nvfp4
-        default: ==SUPPRESS==
-        dest: eval_sglang_flashinfer_a2a_dispatch_type
-        group: options
-        help: Select FlashInfer A2A dispatcher activation dtype.
-        option_strings:
-        - --eval-sglang-flashinfer-a2a-dispatch-type
-        type:
-          $callable: builtins.str
+        - --eval-sglang-disable-aiter-allreduce-fusion-in-decode
+        - --no-eval-sglang-disable-aiter-allreduce-fusion-in-decode
+        type: null
       - action:
           $callable: argparse.BooleanOptionalAction
         default: ==SUPPRESS==
@@ -16624,37 +17230,20 @@ schema:
         - --eval-sglang-disable-draft-cuda-graph
         - --no-eval-sglang-disable-draft-cuda-graph
         type: null
-      - choices:
-          $set:
-          - auto
-          - flashmla
-          - trtllm
-        default: ==SUPPRESS==
-        dest: eval_sglang_dsv4_attn_backend
+      - default: ==SUPPRESS==
+        dest: eval_sglang_grpc_response_timeout_secs
         group: options
-        help: DeepSeek V4 attention backend. 'auto' (default) resolves to 'flashmla'. 'trtllm' (opt-in, SM100/SM103 with FP8
-          KV cache) switches the SWA/compressed KV pools to a uniform 512-dim FP8 layout and runs decode and sparse prefill
-          through the flashinfer trtllm-gen sparse MLA kernel. The backend choice is shared by prefill and decode.
+        help: Timeout in seconds waiting for each native gRPC response chunk, including the first. Must be positive. Defaults
+          to 300.
         option_strings:
-        - --eval-sglang-dsv4-attn-backend
+        - --eval-sglang-grpc-response-timeout-secs
         type:
-          $callable: builtins.str
-      - action:
-          $callable: argparse.BooleanOptionalAction
-        default: ==SUPPRESS==
-        dest: eval_sglang_enable_response_store
-        group: options
-        help: Enable in-memory Responses storage for retrieval, chaining, and background requests. Disabled by default; unsupported
-          with prefill-decode disaggregation. Storage has no TTL or size limit.
-        nargs: 0
-        option_strings:
-        - --eval-sglang-enable-response-store
-        - --no-eval-sglang-enable-response-store
-        type: null
+          $callable: builtins.int
       - choices:
           $set:
           - ascend
           - flashinfer
+          - intel_xpu
           - pytorch
         default: ==SUPPRESS==
         dest: eval_sglang_sampling_backend
@@ -16672,14 +17261,17 @@ schema:
           - deepseek-r1
           - deepseek-v3
           - deepseek-v4
+          - deepseek-v41
           - dots
           - gemma4
+          - gigachat35
           - glm45
           - gpt-oss
           - granite_thinking_parser
           - hunyuan
           - inkling
           - interns1
+          - iquest_q1
           - k2_horizon
           - kimi
           - kimi_k2
@@ -16702,10 +17294,11 @@ schema:
         dest: eval_sglang_reasoning_parser
         group: options
         help: 'Specify the parser for reasoning models. Use ''auto'' to detect from chat template. Options include: [''apertus2509'',
-          ''deepseek-r1'', ''deepseek-v3'', ''deepseek-v4'', ''dots'', ''glm45'', ''ling3'', ''hunyuan'', ''gpt-oss'', ''k2_horizon'',
-          ''kimi'', ''kimi_k2'', ''kimi_k3'', ''mimo'', ''muse'', ''poolside_v1'', ''qwen3'', ''qwen3-thinking'', ''minimax'',
-          ''minimax-append-think'', ''minimax-m3'', ''nanbeige'', ''step3'', ''step3p5'', ''mistral'', ''nemotron_3'', ''granite_thinking_parser'',
-          ''interns1'', ''gemma4'', ''inkling'', ''cohere_command4''].'
+          ''deepseek-r1'', ''deepseek-v3'', ''deepseek-v4'', ''deepseek-v41'', ''dots'', ''glm45'', ''ling3'', ''hunyuan'',
+          ''gpt-oss'', ''k2_horizon'', ''kimi'', ''kimi_k2'', ''kimi_k3'', ''mimo'', ''muse'', ''poolside_v1'', ''qwen3'',
+          ''qwen3-thinking'', ''minimax'', ''minimax-append-think'', ''minimax-m3'', ''nanbeige'', ''step3'', ''step3p5'',
+          ''mistral'', ''nemotron_3'', ''granite_thinking_parser'', ''interns1'', ''gemma4'', ''inkling'', ''iquest_q1'',
+          ''cohere_command4'', ''gigachat35''].'
         option_strings:
         - --eval-sglang-reasoning-parser
         type:
@@ -16719,9 +17312,11 @@ schema:
           - deepseekv31
           - deepseekv32
           - deepseekv4
+          - deepseekv41
           - dots
           - gemma4
           - gigachat3
+          - gigachat35
           - glm
           - glm45
           - glm47
@@ -16730,6 +17325,7 @@ schema:
           - hunyuan
           - inkling
           - interns1
+          - iquest_q1
           - k2_horizon
           - kimi_k2
           - kimi_k2_raw_id
@@ -16758,10 +17354,11 @@ schema:
         group: options
         help: 'Specify the parser for handling tool-call interactions. Use ''auto'' to detect from chat template. Options
           include: [''apertus2509'', ''cohere_command4'', ''deepseekv3'', ''deepseekv31'', ''deepseekv32'', ''deepseekv4'',
-          ''dots'', ''glm'', ''glm45'', ''glm47'', ''gpt-oss'', ''k2_horizon'', ''kimi_k2'', ''kimi_k3'', ''kimi_k2_raw_id'',
-          ''lfm2'', ''ling3'', ''llama3'', ''mimo'', ''minicpm5'', ''mistral'', ''muse'', ''poolside_v1'', ''pythonic'', ''qwen'',
-          ''qwen25'', ''qwen3_coder'', ''spark25'', ''step3'', ''step3p5'', ''minimax-m2'', ''minimax-m3'', ''nanbeige'',
-          ''trinity'', ''interns1'', ''hermes'', ''hunyuan'', ''gigachat3'', ''gemma4'', ''inkling''].'
+          ''deepseekv41'', ''dots'', ''glm'', ''glm45'', ''glm47'', ''gpt-oss'', ''k2_horizon'', ''kimi_k2'', ''kimi_k3'',
+          ''kimi_k2_raw_id'', ''lfm2'', ''ling3'', ''llama3'', ''mimo'', ''minicpm5'', ''mistral'', ''muse'', ''poolside_v1'',
+          ''pythonic'', ''qwen'', ''qwen25'', ''qwen3_coder'', ''spark25'', ''step3'', ''step3p5'', ''minimax-m2'', ''minimax-m3'',
+          ''nanbeige'', ''trinity'', ''interns1'', ''hermes'', ''hunyuan'', ''gigachat3'', ''gigachat35'', ''gemma4'', ''inkling'',
+          ''iquest_q1''].'
         option_strings:
         - --eval-sglang-tool-call-parser
         type:
@@ -16868,6 +17465,7 @@ schema:
           $set:
           - deepseekv32
           - deepseekv4
+          - deepseekv41
           - default
           - glm47
           - glm53
@@ -17161,6 +17759,14 @@ schema:
         - --config-snapshot-name
         type:
           $callable: builtins.str
+      - default: null
+        dest: ci_event_root
+        group: options
+        help: null
+        option_strings:
+        - --ci-event-root
+        type:
+          $callable: builtins.str
       - action:
           $callable: argparse._StoreTrueAction
         const: true
@@ -17202,14 +17808,6 @@ schema:
         option_strings:
         - --ci-disable-logprobs-checker
         type: null
-      - default: 0.03
-        dest: ci_logprobs_checker_abs_tol
-        group: options
-        help: Absolute tolerance between the batch-mean train and rollout log probs in the CI check.
-        option_strings:
-        - --ci-logprobs-checker-abs-tol
-        type:
-          $callable: builtins.float
       - action:
           $callable: argparse._StoreTrueAction
         const: true
@@ -17302,17 +17900,6 @@ schema:
         - --ci-assert-prefill-lag-max
         type:
           $callable: builtins.int
-      - action:
-          $callable: argparse._StoreTrueAction
-        const: true
-        default: false
-        dest: freeze_indexer
-        group: options
-        help: null
-        nargs: 0
-        option_strings:
-        - --freeze-indexer
-        type: null
       - default: null
         dest: custom_megatron_init_path
         group: options
@@ -17350,6 +17937,30 @@ schema:
           HuggingFace checkpoint but their torch_dist checkpoints are not interchangeable.
         option_strings:
         - --dsv4-impl
+        type:
+          $callable: builtins.str
+      - choices:
+          $set:
+          - megatron
+          - miles
+        default: miles
+        dest: dsa_impl
+        group: options
+        help: null
+        option_strings:
+        - --dsa-impl
+        type:
+          $callable: builtins.str
+      - choices:
+          $set:
+          - flashinfer
+          - torch
+        default: torch
+        dest: miles_dsa_topk_backend
+        group: options
+        help: null
+        option_strings:
+        - --miles-dsa-topk-backend
         type:
           $callable: builtins.str
       - default: 0.0.0.0

@@ -1,6 +1,6 @@
 --- megatron
 +++ megatron_lora_targets
-@@ -151 +151 @@
+@@ -152 +152 @@
 -  exclude_modules: null
 +  exclude_modules: v_proj
 @@ -166,2 +166,5 @@
@@ -20,9 +20,9 @@
 @@ -201 +207 @@
 -  lora_rank: 0
 +  lora_rank: 8
-@@ -1076 +1082 @@
+@@ -1083 +1089 @@
 -      tokenizer_model: null
 +      tokenizer_model: $FIXTURES/hf
-@@ -1834 +1840 @@
+@@ -1869 +1875 @@
 -  target_modules: null
 +  target_modules: attn

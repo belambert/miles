@@ -11,8 +11,8 @@ from tests.utils.soak.core.views import read_training_events
 from tests.utils.soak.ft.checkers.resize import LANDING_LAG_ROLLOUTS
 from tests.utils.soak.ft.types import ACTOR_CELL_TYPE, compute_sizes
 
-from miles.backends.megatron_utils.ft.types import TrainStepOutcome
 from miles.backends.megatron_utils.megatron_config import ACTOR_ROLE
+from miles.backends.training_utils.types import TrainStepOutcome
 from miles.ray.specs.train import compute_trainer_pool_id
 from miles.utils.audit_utils.event_logger.models import TrainGroupStepEndEvent
 

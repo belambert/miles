@@ -22,13 +22,13 @@
 @@ -427 +427 @@
 -      disable_param_buffers_cpu_backup: false
 +      disable_param_buffers_cpu_backup: true
-@@ -1024 +1024 @@
+@@ -1031 +1031 @@
 -      save: null
 +      save: $FIXTURES/save
-@@ -1027 +1027 @@
+@@ -1034 +1034 @@
 -      save_interval: null
 +      save_interval: 2
-@@ -1168,0 +1169,12 @@
+@@ -1175,0 +1176,12 @@
 +    - actor_index: null
 +      model_id: null
 +      overrides:
@@ -41,14 +41,14 @@
 +        use_opd: false
 +      role: critic
 +      trainer_id: critic
-@@ -1312,2 +1324,2 @@
+@@ -1325,2 +1337,2 @@
 -  save: null
 -  save_debug_event_data: null
 +  save: $FIXTURES/save
 +  save_debug_event_data: $FIXTURES/save/events
-@@ -1318 +1330 @@
+@@ -1331 +1343 @@
 -  save_interval: null
 +  save_interval: 2
-@@ -1867 +1879 @@
+@@ -1902 +1914 @@
 -  use_critic: false
 +  use_critic: true

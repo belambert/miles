@@ -1,12 +1,12 @@
 --- fsdp
 +++ fsdp_dump_details
-@@ -106 +106 @@
+@@ -107 +107 @@
 -  dump_details: null
 +  dump_details: $FIXTURES/dump
 @@ -188 +188 @@
 -  log_inference_engine_weight_checksums: false
 +  log_inference_engine_weight_checksums: true
-@@ -483,4 +483,4 @@
+@@ -493,4 +493,4 @@
 -  save_debug_event_data: null
 -  save_debug_rollout_data: null
 -  save_debug_train_data: null

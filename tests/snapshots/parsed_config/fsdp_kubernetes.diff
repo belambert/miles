@@ -10,6 +10,6 @@
 @@ -246 +247 @@
 -  object_store_backend: ray
 +  object_store_backend: mooncake
-@@ -1073 +1074 @@
+@@ -1105 +1106 @@
 -  worker_comm_backend: ray
 +  worker_comm_backend: rpc

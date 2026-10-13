@@ -12,9 +12,9 @@
 @@ -188 +188 @@
 -  log_inference_engine_weight_checksums: false
 +  log_inference_engine_weight_checksums: true
-@@ -481 +481 @@
+@@ -491 +491 @@
 -  sample_ownership_grace_steps: 10
 +  sample_ownership_grace_steps: 2
-@@ -483 +483 @@
+@@ -493 +493 @@
 -  save_debug_event_data: null
 +  save_debug_event_data: $FIXTURES/events

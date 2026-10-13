@@ -7,9 +7,9 @@
 -  ft_components: []
 +  ft_components:
 +  - rollout
-@@ -1034 +1035 @@
+@@ -1066 +1067 @@
 -  update_weight_transfer_mode: broadcast
 +  update_weight_transfer_mode: p2p
-@@ -1041 +1042 @@
+@@ -1073 +1074 @@
 -  use_fault_tolerance: false
 +  use_fault_tolerance: true

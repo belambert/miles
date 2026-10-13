@@ -40,6 +40,7 @@ _RESOLVED_AFTER_PARSING: dict[str, Any] = dict(
     rollout_external=False,
     multi_lora=False,
     use_sampling_support_replay=False,
+    rollout_sampling_logprobs_mode="selected",
     run_uuid="0" * RUN_UUID_LENGTH,
 )
 
@@ -126,12 +127,17 @@ def _parse_test_config(argv: list[str]) -> AllConfig:
 def make_trainer_args(*, train_backend: str = "megatron", **values: Any) -> ConfigNamespace:
     from miles.backends.fsdp_utils.config import FsdpArgsNamespace
     from miles.backends.megatron_utils.megatron_config import MegatronArgsNamespace
+    from miles.backends.torchtitan_utils.args_namespace import TorchtitanArgsNamespace
     from miles.utils.args.configs.backend_fields import TrainerBackendTraitConfig
     from miles.utils.args.runtime import TrainerConfig
 
     values = {**parser_defaults(), **values, "train_backend": train_backend}
     trainer_fields = TrainerConfig.model_fields.keys() - TrainerBackendTraitConfig.model_fields.keys()
-    backend_cls = MegatronArgsNamespace if train_backend == "megatron" else FsdpArgsNamespace
+    backend_cls = {
+        "megatron": MegatronArgsNamespace,
+        "fsdp": FsdpArgsNamespace,
+        "torchtitan": TorchtitanArgsNamespace,
+    }[train_backend]
     backend = backend_cls(**{name: value for name, value in values.items() if name not in trainer_fields})
     trainer = {name: value for name, value in values.items() if name in trainer_fields}
     return ConfigNamespace(**trainer, backend=backend)
@@ -163,8 +169,10 @@ def _replace_backend_values(config: AllConfig | TrainerConfig, **updates: Any) -
         field, backend = "backend", config.backend
     elif config.train_backend == "megatron":
         field, backend = "raw_megatron", None
-    else:
+    elif config.train_backend == "fsdp":
         field, backend = "raw_fsdp", config.raw_fsdp
+    else:
+        field, backend = "raw_torchtitan", config.raw_torchtitan
     values = dict(config.raw_megatron.base_args) if backend is None else vars(backend)
     unknown = updates.keys() - values.keys()
     assert not unknown, f"{sorted(unknown)} are neither {type(config).__name__} fields nor backend arguments"

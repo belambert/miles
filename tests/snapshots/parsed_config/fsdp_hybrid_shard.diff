@@ -6,6 +6,6 @@
 @@ -293 +293 @@
 -    dp_replicate_size: 1
 +    dp_replicate_size: 2
-@@ -330 +330 @@
+@@ -334 +334 @@
 -    world_size: 1
 +    world_size: 4

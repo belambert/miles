@@ -1,8 +1,13 @@
 import asyncio
+from pathlib import Path
 
 import pytest
+from tests.utils.soak.core.event_log import EventLog
 from tests.utils.soak.core.events import LaunchOutcome
-from tests.utils.soak.deploy.session import LauncherChain, follow_launchers
+from tests.utils.soak.core.utils import REPLACED_LAUNCH_EXIT_CODE
+from tests.utils.soak.deploy.session import LauncherChain, follow_launchers, start_launch
+
+from miles.utils.external_utils.command_utils.helm_backend.launcher.entrypoint import RunExitedError
 
 
 def _outcome(outcome: LaunchOutcome) -> asyncio.Task[LaunchOutcome]:
@@ -70,3 +75,32 @@ class TestFollowLaunchers:
             await follow_launchers(first, chain=chain)
 
         await asyncio.gather(*[chain.get_nowait() for _ in range(chain.qsize())], return_exceptions=True)
+
+
+class TestFinalLauncherOutcome:
+    async def test_finished_then_replaced_is_rejected(self) -> None:
+        """A finished predecessor cannot hide an unexplained final replacement."""
+        chain = LauncherChain()
+        chain.put_nowait(_outcome(LaunchOutcome.REPLACED))
+        with pytest.raises(AssertionError, match="final launcher"):
+            await follow_launchers(_outcome(LaunchOutcome.FINISHED), chain=chain)
+
+
+class TestStartLaunch:
+    async def test_expected_takeover_is_recorded_as_replaced(self, tmp_path: Path) -> None:
+        """The launcher entrypoint accepts the designated replacement exit code."""
+        event_log = EventLog(tmp_path / "events.jsonl")
+        chain = LauncherChain()
+
+        async def replaced() -> None:
+            raise RunExitedError(REPLACED_LAUNCH_EXIT_CODE)
+
+        launcher = start_launch(
+            replaced(),
+            event_log=event_log,
+            request_id="launch-1",
+            chain=chain,
+        )
+        assert await launcher == LaunchOutcome.REPLACED
+        assert event_log.events[-1].outcome == LaunchOutcome.REPLACED
+        assert chain.get_nowait() is launcher

@@ -1,9 +1,9 @@
 --- megatron
 +++ megatron_context_length_overrides
-@@ -136 +136 @@
+@@ -137 +137 @@
 -  eval_max_context_len: null
 +  eval_max_context_len: 2048
-@@ -1197,2 +1197,2 @@
+@@ -1205,2 +1205,2 @@
 -  rollout_max_context_len: null
 -  rollout_max_prompt_len: null
 +  rollout_max_context_len: 1024

@@ -6,9 +6,9 @@
 @@ -185 +185 @@
 -  load_debug_rollout_data: null
 +  load_debug_rollout_data: $FIXTURES/rollout.pt
-@@ -1200 +1200 @@
+@@ -1208 +1208 @@
 -  rollout_num_gpus: null
 +  rollout_num_gpus: 0
-@@ -1831 +1831 @@
+@@ -1866 +1866 @@
 -  starts_inference_engines: true
 +  starts_inference_engines: false

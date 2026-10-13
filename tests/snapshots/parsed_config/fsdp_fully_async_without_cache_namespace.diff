@@ -1,6 +1,6 @@
 --- fsdp
 +++ fsdp_fully_async_without_cache_namespace
-@@ -129,2 +129,3 @@
+@@ -130,2 +130,3 @@
 -    config: null
 -    path: miles.rollout.inference_rollout.inference_rollout_common.InferenceRolloutFn
 +    config:
@@ -12,7 +12,7 @@
 @@ -271 +272 @@
 -  pause_generation_mode: retract
 +  pause_generation_mode: in_place
-@@ -359,2 +360,3 @@
+@@ -364,2 +365,3 @@
 -    config: null
 -    path: miles.rollout.inference_rollout.inference_rollout_common.InferenceRolloutFn
 +    config:

@@ -1,6 +1,6 @@
 --- megatron
 +++ megatron_eval_legacy_path
-@@ -127 +127,18 @@
+@@ -128 +128,18 @@
 -  eval_datasets: []
 +  eval_datasets:
 +  - custom_generate_function_path: null
@@ -20,14 +20,14 @@
 +    tool_key: tools
 +    top_k: -1
 +    top_p: 1.0
-@@ -133 +150 @@
+@@ -134 +151 @@
 -  eval_interval: null
 +  eval_interval: 2
-@@ -144 +161,3 @@
+@@ -145 +162,3 @@
 -  eval_prompt_data: null
 +  eval_prompt_data:
 +  - aime
 +  - $FIXTURES/data.jsonl
-@@ -474 +493 @@
+@@ -481 +500 @@
 -      eval_interval: null
 +      eval_interval: 2

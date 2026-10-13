@@ -255,7 +255,7 @@ class TestCheckpointPublication:
         args = _make_args(num_rollout=40, save_interval=20, eval_interval=20, skip_eval_before_train=True)
         components = _install_driver_fakes(monkeypatch, args, events, num_rollout_per_epoch=100)
 
-        await with_disposer(train_driver.train, args)
+        await with_disposer(train_driver.train, _startup_info(args))
 
         assert components.actor_model.saved == [19, 39]
         assert [event for event in events if event.startswith("eval:")] == ["eval:19", "eval:39"]
@@ -278,7 +278,7 @@ class TestCheckpointPublication:
         components.rollout_executor.save = fail_rollout_save
 
         with pytest.raises(OSError, match="rollout state write failed"):
-            await with_disposer(train_driver.train, args)
+            await with_disposer(train_driver.train, _startup_info(args))
 
         assert components.actor_model.saved == []
 

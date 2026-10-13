@@ -25,6 +25,6 @@
 @@ -201 +215 @@
 -  lora_rank: 0
 +  lora_rank: 8
-@@ -1076 +1090 @@
+@@ -1083 +1097 @@
 -      tokenizer_model: null
 +      tokenizer_model: $FIXTURES/hf

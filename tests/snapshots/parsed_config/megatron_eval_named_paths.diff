@@ -1,6 +1,6 @@
 --- megatron
 +++ megatron_eval_named_paths
-@@ -127 +127,35 @@
+@@ -128 +128,35 @@
 -  eval_datasets: []
 +  eval_datasets:
 +  - custom_generate_function_path: null
@@ -37,7 +37,7 @@
 +    tool_key: tools
 +    top_k: -1
 +    top_p: 1.0
-@@ -144 +178,5 @@
+@@ -145 +179,5 @@
 -  eval_prompt_data: null
 +  eval_prompt_data:
 +  - first

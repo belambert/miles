@@ -6,11 +6,11 @@
 @@ -188 +188 @@
 -  log_inference_engine_weight_checksums: false
 +  log_inference_engine_weight_checksums: true
-@@ -482,2 +482,2 @@
+@@ -492,2 +492,2 @@
 -  save: null
 -  save_debug_event_data: null
 +  save: $FIXTURES/save
 +  save_debug_event_data: $FIXTURES/save/events
-@@ -488 +488 @@
+@@ -498 +498 @@
 -  save_interval: null
 +  save_interval: 2

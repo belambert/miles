@@ -17,7 +17,7 @@
 @@ -427 +427 @@
 -      disable_param_buffers_cpu_backup: false
 +      disable_param_buffers_cpu_backup: true
-@@ -1168,0 +1169,12 @@
+@@ -1175,0 +1176,12 @@
 +    - actor_index: null
 +      model_id: null
 +      overrides:
@@ -30,6 +30,6 @@
 +        use_opd: false
 +      role: critic
 +      trainer_id: critic
-@@ -1867 +1879 @@
+@@ -1902 +1914 @@
 -  use_critic: false
 +  use_critic: true

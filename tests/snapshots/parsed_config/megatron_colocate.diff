@@ -19,13 +19,13 @@
 @@ -427 +428 @@
 -      disable_param_buffers_cpu_backup: false
 +      disable_param_buffers_cpu_backup: true
-@@ -1200 +1201 @@
+@@ -1208 +1209 @@
 -  rollout_num_gpus: null
 +  rollout_num_gpus: 1
-@@ -1358 +1359 @@
+@@ -1377 +1378 @@
 -      cuda_graph_backend_prefill: null
 +      cuda_graph_backend_prefill: disabled
-@@ -1818 +1819,12 @@
+@@ -1853 +1854,12 @@
 -    models: []
 +    models:
 +    - model_path: null
@@ -39,7 +39,7 @@
 +          $enum: miles.backends.sglang_utils.sglang_api_client.WorkerType
 +          name: REGULAR
 +      update_weights: true
-@@ -1826 +1838,5 @@
+@@ -1861 +1873,5 @@
 -    groups: {}
 +    groups:
 +      default:

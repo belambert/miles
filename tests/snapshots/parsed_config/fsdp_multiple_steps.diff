@@ -15,6 +15,6 @@
 @@ -268 +268 @@
 -  over_sampling_batch_size: 2
 +  over_sampling_batch_size: 4
-@@ -352 +352 @@
+@@ -357 +357 @@
 -  rollout_batch_size: 2
 +  rollout_batch_size: 4

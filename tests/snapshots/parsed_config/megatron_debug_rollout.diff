@@ -7,10 +7,10 @@
 -  init_expected_num_cells: {}
 +  init_expected_num_cells:
 +    default: 1
-@@ -1200 +1201 @@
+@@ -1208 +1209 @@
 -  rollout_num_gpus: null
 +  rollout_num_gpus: 1
-@@ -1818 +1819,12 @@
+@@ -1853 +1854,12 @@
 -    models: []
 +    models:
 +    - model_path: null
@@ -24,13 +24,13 @@
 +          $enum: miles.backends.sglang_utils.sglang_api_client.WorkerType
 +          name: REGULAR
 +      update_weights: true
-@@ -1826 +1838,5 @@
+@@ -1861 +1873,5 @@
 -    groups: {}
 +    groups:
 +      default:
 +      - engine_offset: 0
 +        gpu_offset: 0
 +        num_gpus: 1
-@@ -1848 +1864 @@
+@@ -1883 +1899 @@
 -  train_memory_margin_bytes: 1073741824
 +  train_memory_margin_bytes: 0

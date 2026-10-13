@@ -3,6 +3,16 @@
 @@ -17,0 +18,2 @@
 +- --custom-generate-function-path
 +- builtins.str
-@@ -191 +193 @@
+@@ -190 +192 @@
 -    custom_generate_function_path: null
 +    custom_generate_function_path: builtins.str
+@@ -21023,2 +21025,2 @@
+-          ''mistral'', ''nemotron_3'', ''granite_thinking_parser'', ''interns1'', ''gemma4'', ''inkling'', ''iquest_q1'',
+-          ''cohere_command4'', ''gigachat35''].'
++          ''mistral'', ''nemotron_3'', ''granite_thinking_parser'', ''interns1'', ''gemma4'', ''gigachat35'', ''inkling'',
++          ''iquest_q1'', ''cohere_command4''].'
+@@ -26804,2 +26806,2 @@
+-          ''mistral'', ''nemotron_3'', ''granite_thinking_parser'', ''interns1'', ''gemma4'', ''inkling'', ''iquest_q1'',
+-          ''cohere_command4'', ''gigachat35''].'
++          ''mistral'', ''nemotron_3'', ''granite_thinking_parser'', ''interns1'', ''gemma4'', ''gigachat35'', ''inkling'',
++          ''iquest_q1'', ''cohere_command4''].'

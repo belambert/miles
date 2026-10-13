@@ -15,12 +15,12 @@
 @@ -268 +268 @@
 -  over_sampling_batch_size: 2
 +  over_sampling_batch_size: 4
-@@ -473 +473 @@
+@@ -480 +480 @@
 -      eval_global_batch_size: 1
 +      eval_global_batch_size: 4
-@@ -556 +556 @@
+@@ -563 +563 @@
 -      global_batch_size: 1
 +      global_batch_size: 4
-@@ -1182 +1182 @@
+@@ -1190 +1190 @@
 -  rollout_batch_size: 2
 +  rollout_batch_size: 4

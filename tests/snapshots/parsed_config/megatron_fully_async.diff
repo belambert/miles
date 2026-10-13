@@ -1,6 +1,6 @@
 --- megatron
 +++ megatron_fully_async
-@@ -129,2 +129,3 @@
+@@ -130,2 +130,3 @@
 -    config: null
 -    path: miles.rollout.inference_rollout.inference_rollout_common.InferenceRolloutFn
 +    config:
@@ -9,7 +9,7 @@
 @@ -160 +161 @@
 -  fully_async: false
 +  fully_async: true
-@@ -1189,2 +1190,3 @@
+@@ -1197,2 +1198,3 @@
 -    config: null
 -    path: miles.rollout.inference_rollout.inference_rollout_common.InferenceRolloutFn
 +    config:

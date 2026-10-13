@@ -216,6 +216,7 @@ _RESOLVED_ROLLOUT_FIELDS: dict[str, Any] = dict(
     ckpt_step=None,
     num_layers=None,
     raw_fsdp=None,
+    raw_torchtitan=None,
     lora_A_init_method="xavier",
     lora_B_init_method="zero",
 )

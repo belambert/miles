@@ -1,5 +1,5 @@
 --- fsdp
 +++ fsdp_router_ipv6
-@@ -991 +991 @@
+@@ -1023 +1023 @@
 -  sglang_router_ip: null
 +  sglang_router_ip: '[::1]'

@@ -1,6 +1,6 @@
 --- fsdp
 +++ fsdp_eval_fleet
-@@ -127 +127,18 @@
+@@ -128 +128,18 @@
 -  eval_datasets: []
 +  eval_datasets:
 +  - custom_generate_function_path: null
@@ -20,28 +20,28 @@
 +    tool_key: tools
 +    top_k: -1
 +    top_p: 1.0
-@@ -131 +148 @@
+@@ -132 +149 @@
 -  eval_hf_dir: null
 +  eval_hf_dir: $FIXTURES/eval-hf
-@@ -133 +150 @@
+@@ -134 +151 @@
 -  eval_interval: null
 +  eval_interval: 2
-@@ -141 +158 @@
+@@ -142 +159 @@
 -  eval_num_gpus: 0
 +  eval_num_gpus: 1
-@@ -144 +161,3 @@
+@@ -145 +162,3 @@
 -  eval_prompt_data: null
 +  eval_prompt_data:
 +  - aime
 +  - $FIXTURES/data.jsonl
-@@ -150 +169 @@
+@@ -151 +170 @@
 -  eval_uses_snapshots: false
 +  eval_uses_snapshots: true
 @@ -175 +194,2 @@
 -  init_expected_num_cells: {}
 +  init_expected_num_cells:
 +    eval: 1
-@@ -988 +1008,15 @@
+@@ -1020 +1040,15 @@
 -    models: []
 +    models:
 +    - model_path: null
@@ -58,7 +58,7 @@
 +          $enum: miles.backends.sglang_utils.sglang_api_client.WorkerType
 +          name: REGULAR
 +      update_weights: false
-@@ -996 +1030,5 @@
+@@ -1028 +1062,5 @@
 -    groups: {}
 +    groups:
 +      eval:

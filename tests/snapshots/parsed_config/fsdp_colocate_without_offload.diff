@@ -7,13 +7,13 @@
 -  init_expected_num_cells: {}
 +  init_expected_num_cells:
 +    default: 1
-@@ -370 +371 @@
+@@ -375 +376 @@
 -  rollout_num_gpus: null
 +  rollout_num_gpus: 1
-@@ -528 +529 @@
+@@ -544 +545 @@
 -      cuda_graph_backend_prefill: null
 +      cuda_graph_backend_prefill: disabled
-@@ -988 +989,12 @@
+@@ -1020 +1021,12 @@
 -    models: []
 +    models:
 +    - model_path: null
@@ -27,7 +27,7 @@
 +          $enum: miles.backends.sglang_utils.sglang_api_client.WorkerType
 +          name: REGULAR
 +      update_weights: true
-@@ -996 +1008,5 @@
+@@ -1028 +1040,5 @@
 -    groups: {}
 +    groups:
 +      default:

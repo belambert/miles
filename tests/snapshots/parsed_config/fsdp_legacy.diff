@@ -1,8 +1,8 @@
 --- fsdp
 +++ fsdp_legacy
-@@ -130 +130 @@
+@@ -131 +131 @@
 -    path: miles.rollout.inference_rollout.inference_rollout_common.InferenceRolloutFn
 +    path: miles.rollout.sglang_rollout.generate_rollout
-@@ -360 +360 @@
+@@ -365 +365 @@
 -    path: miles.rollout.inference_rollout.inference_rollout_common.InferenceRolloutFn
 +    path: miles.rollout.sglang_rollout.generate_rollout
