@@ -229,7 +229,7 @@ class RolloutRelatedConfig(BaseConfig):
         str,
         Arg(
             type_parser=None,
-            choices=["broadcast", "p2p", "disk-delta"],
+            choices=["broadcast", "broadcast_packed", "p2p", "disk-delta"],
             help=(
                 "The method to transfer weights to remote rollout engines during update weight. "
                 "'disk-delta' diffs each sync against a CPU snapshot of the previous one and publishes "
