@@ -88,13 +88,17 @@ class AlgoConfig(BaseConfig):
     loss_type: A[
         str,
         Arg(
-            choices=["policy_loss", "sft_loss", "custom_loss"],
+            choices=["policy_loss", "sft_loss", "custom_loss", "score_centering"],
             help=(
                 "Choose loss type, currently support ppo policy_loss or sft_loss, "
                 "if custom_loss is set, we will use the function path from `--custom-loss-function-path`."
             ),
         ),
     ] = "policy_loss"
+    score_centering_is: A[str, Arg(choices=["none", "tis", "mis"])] = "none"
+    score_centering_tis_clip: A[float, Arg()] = 2.0
+    score_centering_mis_low: A[float, Arg()] = 0.5
+    score_centering_mis_high: A[float, Arg()] = 5.0
     custom_loss_function_path: A[
         CustomFunctionConfig | None,
         Arg(
