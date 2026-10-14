@@ -62,15 +62,10 @@ def add_user_provided_function_arguments(
 def resolve_custom_function_configs(args: argparse.Namespace, *, config_class: type[BaseConfig] | None = None) -> None:
     custom_arg_names: set[str] = set()
     for info in _compute_custom_function_field_infos(args, config_class=config_class):
-        config = None
-        if (function_config_class := info.config_class) is not None:
-            config = function_config_class.model_validate(
-                {
-                    key: getattr(args, key) for key in function_config_class.model_fields if hasattr(args, key)
-                }  # config-access-exempt: schema-selected fields
-            )
-            custom_arg_names.update(function_config_class.model_fields)
-        setattr(args, info.name, CustomFunctionConfig(path=info.path, config=config))
+        resolved = _resolve_custom_function_config(info=info, args=args)
+        if resolved.config is not None:
+            custom_arg_names.update(type(resolved.config).model_fields)
+        setattr(args, info.name, resolved)
 
     for name in custom_arg_names:
         if hasattr(args, name):  # config-access-exempt: schema-selected field
@@ -83,6 +78,19 @@ class _CustomFunctionFieldInfo:
     path: str
     fn: Any
     config_class: type[BaseConfig] | None
+
+
+def _resolve_custom_function_config(
+    *, info: _CustomFunctionFieldInfo, args: argparse.Namespace
+) -> CustomFunctionConfig:
+    config = None
+    if (config_class := info.config_class) is not None:
+        config = config_class.model_validate(
+            {
+                key: getattr(args, key) for key in config_class.model_fields if hasattr(args, key)
+            }  # config-access-exempt: schema-selected fields
+        )
+    return CustomFunctionConfig(path=info.path, config=config)
 
 
 def _compute_custom_function_field_infos(
