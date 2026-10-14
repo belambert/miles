@@ -1,8 +1,7 @@
 processes:
   tests/e2e/fsdp/test_qwen3_0.6B_megatron_fsdp_align/run-0000/all/default/actor_cell00000:
-    diffs: &id007
-      checkpoint_load-0000: {set: {/format: hf, /load: /root/models/Qwen3-0.6B/}}
-      train_first_step-0000: {set: {<<: &id013 {/args/backend/lr_decay_iters: 1, /args/backend/train_iters: 1}, /role: actor}}
+    diffs: &id007 {checkpoint_load-0000: {set: {/format: hf, /load: /root/models/Qwen3-0.6B/}}, train_first_step-0000: {set: {
+          <<: &id013 {/args/backend/lr_decay_iters: 1, /args/backend/train_iters: 1}, /role: actor}}}
     overrides:
       set:
         <<: &id001
@@ -11,36 +10,24 @@ processes:
           - model_path: null
             name: default
             server_groups:
-            - needs_offload: true
-              num_gpus_per_engine: 1
-              overrides: {model_path: /root/models/Qwen3-0.6B/}
-              worker_type: {$enum: miles.backends.sglang_utils.sglang_api_client.WorkerType, name: REGULAR}
+            - {needs_offload: true, num_gpus_per_engine: 1, overrides: {model_path: /root/models/Qwen3-0.6B/}, worker_type: {
+                $enum: miles.backends.sglang_utils.sglang_api_client.WorkerType, name: REGULAR}}
             update_weights: true
         /args/init_expected_num_cells/default: 2
     ranks: [0, 1]
     template: trainer-fsdp-01
   tests/e2e/fsdp/test_qwen3_0.6B_megatron_fsdp_align/run-0000/all/default/inference_controller:
-    diffs: &id004
-      router_endpoints-0000:
-        set:
-          <<: &id002
-            /args/sglang_model_routers: {default: {$tuple: [$HOST, $PORT]}}
-            /args/sglang_router_ip: $HOST
-            /args/sglang_router_port: $PORT
+    diffs: &id004 {router_endpoints-0000: {set: {<<: &id002 {/args/sglang_model_routers: {default: {$tuple: [$HOST, $PORT]}},
+            /args/sglang_router_ip: $HOST, /args/sglang_router_port: $PORT}}}}
     overrides:
       set:
         <<:
         - *id001
-        - &id003
-          /args/train_backend: fsdp
-          /args/train_env_vars/PYTORCH_CUDA_ALLOC_CONF: expandable_segments:True
+        - &id003 {/args/train_backend: fsdp, /args/train_env_vars/PYTORCH_CUDA_ALLOC_CONF: 'expandable_segments:True'}
     template: inference_controller-01
   tests/e2e/fsdp/test_qwen3_0.6B_megatron_fsdp_align/run-0000/all/default/main:
     diffs:
-      router_endpoints-0000:
-        set:
-          <<: *id002
-          /args/wandb_run_id: $WANDB_RUN_ID_0000
+      router_endpoints-0000: {set: {<<: *id002, /args/wandb_run_id: $WANDB_RUN_ID_0000}}
       tracking_config-0000: &id011 {set: {/args/wandb_run_id: $WANDB_RUN_ID_0000}}
     overrides:
       set:
@@ -48,63 +35,18 @@ processes:
         - *id001
         - *id003
         - &id005
-          /args/raw_fsdp:
-            adam_beta1: 0.9
-            adam_beta2: 0.98
-            adam_eps: 1.0e-08
-            attn_implementation: flash_attention_2
-            backend_name: fsdp
-            bf16: true
-            calculate_per_token_loss: false
-            ckpt_step: null
-            clip_grad: 1.0
-            config: null
-            context_parallel_size: 1
-            deterministic_mode: false
-            disable_grad_buffers_cpu_backup: true
-            disable_param_buffers_cpu_backup: true
-            dp_replicate_size: 1
-            finetune: true
-            fp16: false
-            fsdp_cpu_backend: gloo
-            fsdp_cpu_offload: false
-            fsdp_state_dict_cpu_offload: true
-            gradient_checkpointing: true
-            keep_fp32_master: true
-            load: null
-            lr: 1.0e-06
-            lr_decay_iters: null
-            lr_decay_style: constant
-            lr_warmup_fraction: null
-            lr_warmup_init: 0.0
-            lr_warmup_iters: 0
-            lr_wsd_decay_iters: null
-            lr_wsd_decay_style: null
-            memory_snapshot_path: snapshot.pickle
-            min_lr: 0.0
-            mtp_loss_scaling_factor: 0.2
-            mtp_num_layers: null
-            no_load_optim: true
-            no_load_rng: true
-            no_save_optim: false
-            optimizer: adam
-            override_lr_scheduler: false
-            profile_step_end: 12
-            profile_step_start: 10
-            rank: 0
-            record_memory_history: false
-            tensorboard_dir: null
-            use_checkpoint_lr_scheduler: true
-            use_pytorch_profiler: false
-            wandb_project: miles-test_qwen3_0.6B_megatron_fsdp_align
-            wandb_run_name: null
-            warmup_ratio: 0.03
-            weight_decay: 0.1
-            world_size: 2
-          /args/raw_megatron:
-            base_args: {}
-            trainers:
-            - {actor_index: 0, model_id: null, overrides: {}, role: actor, trainer_id: actor}
+          /args/raw_fsdp: {adam_beta1: 0.9, adam_beta2: 0.98, adam_eps: 1.0e-08, attn_implementation: flash_attention_2, backend_name: fsdp,
+            bf16: true, calculate_per_token_loss: false, ckpt_step: null, clip_grad: 1.0, config: null, context_parallel_size: 1,
+            deterministic_mode: false, disable_grad_buffers_cpu_backup: true, disable_param_buffers_cpu_backup: true, dp_replicate_size: 1,
+            finetune: true, fp16: false, fsdp_cpu_backend: gloo, fsdp_cpu_offload: false, fsdp_state_dict_cpu_offload: true,
+            gradient_checkpointing: true, keep_fp32_master: true, load: null, lr: 1.0e-06, lr_decay_iters: null, lr_decay_style: constant,
+            lr_warmup_fraction: null, lr_warmup_init: 0.0, lr_warmup_iters: 0, lr_wsd_decay_iters: null, lr_wsd_decay_style: null,
+            memory_snapshot_path: snapshot.pickle, min_lr: 0.0, mtp_loss_scaling_factor: 0.2, mtp_num_layers: null, no_load_optim: true,
+            no_load_rng: true, no_save_optim: false, optimizer: adam, override_lr_scheduler: false, profile_step_end: 12,
+            profile_step_start: 10, rank: 0, record_memory_history: false, tensorboard_dir: null, use_checkpoint_lr_scheduler: true,
+            use_pytorch_profiler: false, wandb_project: miles-test_qwen3_0.6B_megatron_fsdp_align, wandb_run_name: null, warmup_ratio: 0.03,
+            weight_decay: 0.1, world_size: 2}
+          /args/raw_megatron: {base_args: {}, trainers: [{actor_index: 0, model_id: null, overrides: {}, role: actor, trainer_id: actor}]}
         /args/wandb_run_id: null
     template: inference_controller-01
   tests/e2e/fsdp/test_qwen3_0.6B_megatron_fsdp_align/run-0000/all/default/rollout_executor:
@@ -130,9 +72,7 @@ processes:
           /args/custom_rollout_log_function_path: null
           /args/dynamic_sampling_filter_path: null
           /args/eval_datasets: []
-          /args/eval_function_path:
-            config: null
-            path: miles.rollout.inference_rollout.inference_rollout_common.InferenceRolloutFn
+          /args/eval_function_path: {config: null, path: miles.rollout.inference_rollout.inference_rollout_common.InferenceRolloutFn}
           /args/eval_max_prompt_len: null
           /args/eval_reward_key: null
           /args/group_rm: false
@@ -182,17 +122,9 @@ processes:
         - *id003
         - *id005
         - *id006
-        - &id012
-          /args/actor_num_nodes: 1
-          /args/critic_num_gpus_per_node: null
-          /args/critic_num_nodes: null
-          /args/eval_num_gpus: 0
-          /args/eval_num_gpus_per_engine: 1
-          /args/tinker_base_model: null
-          /args/tinker_checkpoint_root: null
-          /args/tinker_lora_groups: null
-          /args/tinker_server_host: 0.0.0.0
-          /args/tinker_server_port: 10613
+        - &id012 {/args/actor_num_nodes: 1, /args/critic_num_gpus_per_node: null, /args/critic_num_nodes: null, /args/eval_num_gpus: 0,
+          /args/eval_num_gpus_per_engine: 1, /args/tinker_base_model: null, /args/tinker_checkpoint_root: null, /args/tinker_lora_groups: null,
+          /args/tinker_server_host: 0.0.0.0, /args/tinker_server_port: 10613}
         /args/actor_num_gpus_per_node: 2
         /args/rollout_num_gpus: 2
         /args/save_debug_rollout_data: test_rollout_data_megatron_fsdp_align_{rollout_id}.pt
@@ -204,15 +136,9 @@ processes:
       remove: &id008 [/args/init_expected_num_cells/default]
       set:
         <<:
-        - &id009
-          /args/check_weight_update_equal: false
-          /args/debug_train_only: true
-          /args/load_debug_rollout_data: test_rollout_data_megatron_fsdp_align_{rollout_id}.pt
-          /args/sglang/models: []
-          /args/starts_inference_engines: false
-        - &id010
-          /args/ci_save_grad_norm: grad_norm_fsdp.pt
-          /args/config_snapshot_name: tests/e2e/fsdp/test_qwen3_0.6B_megatron_fsdp_align/run-0001
+        - &id009 {/args/check_weight_update_equal: false, /args/debug_train_only: true, /args/load_debug_rollout_data: 'test_rollout_data_megatron_fsdp_align_{rollout_id}.pt',
+          /args/sglang/models: [], /args/starts_inference_engines: false}
+        - &id010 {/args/ci_save_grad_norm: grad_norm_fsdp.pt, /args/config_snapshot_name: tests/e2e/fsdp/test_qwen3_0.6B_megatron_fsdp_align/run-0001}
     ranks: [0, 1]
     template: trainer-fsdp-01
   tests/e2e/fsdp/test_qwen3_0.6B_megatron_fsdp_align/run-0001/all/default/inference_controller:
@@ -286,11 +212,7 @@ processes:
           /args/backend/no_load_rng: true
           /load: /root/models/Qwen3-0.6B_torch_dist
           /local_checkpoint_manager: false
-      train_first_step-0000:
-        set:
-          <<: *id013
-          /args/backend/model_type: *id014
-          /role: actor
+      train_first_step-0000: {set: {<<: *id013, /args/backend/model_type: *id014, /role: actor}}
     ranks: [0, 1]
     template: trainer-megatron-02
   tests/e2e/fsdp/test_qwen3_0.6B_megatron_fsdp_align/run-0002/all/default/inference_controller:
@@ -299,13 +221,9 @@ processes:
       set:
         <<:
         - *id009
-        - &id016
-          /args/ci_load_grad_norm: grad_norm_fsdp.pt
-          /args/config_snapshot_name: tests/e2e/fsdp/test_qwen3_0.6B_megatron_fsdp_align/run-0002
-          /args/ref_load: /root/models/Qwen3-0.6B_torch_dist
-          /args/skip_actor_forward_only: true
-          /args/start_rollout_id: null
-          /args/train_memory_margin_bytes: 3221225472
+        - &id016 {/args/ci_load_grad_norm: grad_norm_fsdp.pt, /args/config_snapshot_name: tests/e2e/fsdp/test_qwen3_0.6B_megatron_fsdp_align/run-0002,
+          /args/ref_load: /root/models/Qwen3-0.6B_torch_dist, /args/skip_actor_forward_only: true, /args/start_rollout_id: null,
+          /args/train_memory_margin_bytes: 3221225472}
     template: inference_controller-01
   tests/e2e/fsdp/test_qwen3_0.6B_megatron_fsdp_align/run-0002/all/default/main:
     diffs: *id015
@@ -315,43 +233,18 @@ processes:
         <<:
         - *id009
         - *id016
-        - &id018
-          /args/enable_sample_ownership_checker: false
-          /args/kl_loss_type: k1
-          /args/log_probs_max_tokens_per_gpu: 8192
-          /args/max_tokens_per_gpu: 8192
-          /args/sglang/base_args/chunked_prefill_size: 4096
-        - &id019
-          /args/eps_clip: 0.0004
-          /args/eps_clip_high: 0.0004
-          /args/hf_checkpoint: /root/models/Qwen3-0.6B/
-          /args/sglang/base_args/mem_fraction_static: 0.75
-        - &id020
-          /args/global_batch_size: 64
-          /args/input_key: prompt
-          /args/num_layers: 28
-          /args/wandb_project: miles-test_qwen3_0.6B_megatron_fsdp_align
-        - &id021
-          /args/raw_megatron/base_args/data_parallel_size: 2
-          /args/raw_megatron/base_args/encoder_num_layers: 28
-          /args/raw_megatron/base_args/eval_global_batch_size: 64
-          /args/raw_megatron/base_args/ffn_hidden_size: 3072
-          /args/raw_megatron/base_args/finetune: false
-          /args/raw_megatron/base_args/global_batch_size: 64
-          /args/raw_megatron/base_args/hidden_size: 1024
-          /args/raw_megatron/base_args/load: null
-          /args/raw_megatron/base_args/no_load_optim: null
-          /args/raw_megatron/base_args/no_load_rng: null
-          /args/raw_megatron/base_args/num_attention_heads: 16
-          /args/raw_megatron/base_args/num_layers: 28
-          /args/raw_megatron/base_args/num_query_groups: 8
-          /args/raw_megatron/base_args/padded_vocab_size: 151936
-          /args/raw_megatron/base_args/sequence_parallel: false
-          /args/raw_megatron/base_args/tensor_model_parallel_size: 1
-          /args/raw_megatron/base_args/tokenizer_model: /root/models/Qwen3-0.6B/
-          /args/raw_megatron/base_args/untie_embeddings_and_output_weights: false
-          /args/raw_megatron/base_args/wandb_project: miles-test_qwen3_0.6B_megatron_fsdp_align
-          /args/raw_megatron/base_args/world_size: 2
+        - &id018 {/args/enable_sample_ownership_checker: false, /args/kl_loss_type: k1, /args/log_probs_max_tokens_per_gpu: 8192,
+          /args/max_tokens_per_gpu: 8192, /args/sglang/base_args/chunked_prefill_size: 4096}
+        - &id019 {/args/eps_clip: 0.0004, /args/eps_clip_high: 0.0004, /args/hf_checkpoint: /root/models/Qwen3-0.6B/, /args/sglang/base_args/mem_fraction_static: 0.75}
+        - &id020 {/args/global_batch_size: 64, /args/input_key: prompt, /args/num_layers: 28, /args/wandb_project: miles-test_qwen3_0.6B_megatron_fsdp_align}
+        - &id021 {/args/raw_megatron/base_args/data_parallel_size: 2, /args/raw_megatron/base_args/encoder_num_layers: 28,
+          /args/raw_megatron/base_args/eval_global_batch_size: 64, /args/raw_megatron/base_args/ffn_hidden_size: 3072, /args/raw_megatron/base_args/finetune: false,
+          /args/raw_megatron/base_args/global_batch_size: 64, /args/raw_megatron/base_args/hidden_size: 1024, /args/raw_megatron/base_args/load: null,
+          /args/raw_megatron/base_args/no_load_optim: null, /args/raw_megatron/base_args/no_load_rng: null, /args/raw_megatron/base_args/num_attention_heads: 16,
+          /args/raw_megatron/base_args/num_layers: 28, /args/raw_megatron/base_args/num_query_groups: 8, /args/raw_megatron/base_args/padded_vocab_size: 151936,
+          /args/raw_megatron/base_args/sequence_parallel: false, /args/raw_megatron/base_args/tensor_model_parallel_size: 1,
+          /args/raw_megatron/base_args/tokenizer_model: /root/models/Qwen3-0.6B/, /args/raw_megatron/base_args/untie_embeddings_and_output_weights: false,
+          /args/raw_megatron/base_args/wandb_project: miles-test_qwen3_0.6B_megatron_fsdp_align, /args/raw_megatron/base_args/world_size: 2}
     template: main-01
   tests/e2e/fsdp/test_qwen3_0.6B_megatron_fsdp_align/run-0002/all/default/rollout_executor:
     overrides: *id017
@@ -374,24 +267,11 @@ processes:
     template: worker_manager-01
 shared_overrides:
   inference_controller-01:
-    set:
-      <<:
-      - *id018
-      - *id019
-      - *id020
+    set: {<<: [*id018, *id019, *id020]}
   trainer-fsdp-01:
-    set:
-      <<:
-      - *id019
-      - &id022
-        /args/backend/global_batch_size: 64
-        /args/backend/num_layers: 28
-        /args/num_rollout: 1
-        /args/rollout_max_response_len: 8192
-      /args/backend/attn_implementation: flash_attention_2
-      /args/rm_type: deepscaler
-      /args/sglang/base_args/attention_backend: null
-      /args/sglang/base_args/decode_log_interval: 40
+    set: {<<: [*id019, &id022 {/args/backend/global_batch_size: 64, /args/backend/num_layers: 28, /args/num_rollout: 1, /args/rollout_max_response_len: 8192}],
+      /args/backend/attn_implementation: flash_attention_2, /args/rm_type: deepscaler, /args/sglang/base_args/attention_backend: null,
+      /args/sglang/base_args/decode_log_interval: 40}
   trainer-megatron-02:
     remove: [/args/backend/ckpt_step, /args/backend/finetune, /args/backend/load, /args/backend/no_load_optim, /args/backend/no_load_rng,
       /args/init_expected_num_cells/default]

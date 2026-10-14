@@ -201,9 +201,7 @@ templates:
         rollout_external: false
         rollout_external_engine_addrs: null
         rollout_external_router_pd: false
-        rollout_function_path: &id014
-          config: null
-          path: miles.rollout.inference_rollout.inference_rollout_common.InferenceRolloutFn
+        rollout_function_path: &id014 {config: null, path: miles.rollout.inference_rollout.inference_rollout_common.InferenceRolloutFn}
         rollout_global_dataset: true
         rollout_health_check_failure_threshold: 1
         rollout_health_check_first_wait: 0.0
@@ -286,47 +284,15 @@ templates:
         wandb_team: null
         witness_buffer_size: 1048576
         worker_comm_backend: ray
-      - &id004
-        allgather_cp: false
-        ci_disable_logprobs_checker: false
-        data_pad_size_multiplier: 128
-        log_inference_engine_weight_checksums: false
-        log_probs_chunk_size: -1
-        requested_load: null
-        rollout_num_gpus_per_engine: 1
-        save_debug_event_data: /tmp/miles-ci/$RUN_UUID/events
-        update_weight_buffer_size: 536870912
-        use_rollout_routing_replay: false
-        use_routing_replay: false
-      - &id005
-        apply_chat_template: true
-        check_weight_update_equal: true
-        custom_agent_function_path: null
-        custom_generate_function_path: null
-        debug_rollout_only: false
-        eps_clip_high: 0.28
-        label_key: label
-        n_samples_per_prompt: 8
-        prompt_data: /root/datasets/dapo-math-17k/dapo-math-17k.jsonl
-        sglang_router_policy: null
-        tito_model: default
-        train_memory_margin_bytes: 1073741824
-        use_dynamic_batch_size: true
-        use_session_server: false
-        use_wandb: true
-        wandb_key: redacted-sha256:bb5f612f3d4803aa
-        wandb_random_suffix: false
-      - &id006
-        async_save: false
-        ckpt_step: null
-        distributed_backend: nccl
-        distributed_timeout_minutes: 10
-        eval_interval: null
-        low_memory_resume: false
-        micro_batch_size: 1
-        save: null
-        save_interval: null
-        seed: 1234
+      - &id004 {allgather_cp: false, ci_disable_logprobs_checker: false, data_pad_size_multiplier: 128, log_inference_engine_weight_checksums: false,
+        log_probs_chunk_size: -1, requested_load: null, rollout_num_gpus_per_engine: 1, save_debug_event_data: /tmp/miles-ci/$RUN_UUID/events,
+        update_weight_buffer_size: 536870912, use_rollout_routing_replay: false, use_routing_replay: false}
+      - &id005 {apply_chat_template: true, check_weight_update_equal: true, custom_agent_function_path: null, custom_generate_function_path: null,
+        debug_rollout_only: false, eps_clip_high: 0.28, label_key: label, n_samples_per_prompt: 8, prompt_data: /root/datasets/dapo-math-17k/dapo-math-17k.jsonl,
+        sglang_router_policy: null, tito_model: default, train_memory_margin_bytes: 1073741824, use_dynamic_batch_size: true,
+        use_session_server: false, use_wandb: true, wandb_key: 'redacted-sha256:bb5f612f3d4803aa', wandb_random_suffix: false}
+      - &id006 {async_save: false, ckpt_step: null, distributed_backend: nccl, distributed_timeout_minutes: 10, eval_interval: null,
+        low_memory_resume: false, micro_batch_size: 1, save: null, save_interval: null, seed: 1234}
       - &id007
         colocate: true
         offload_rollout: true
@@ -422,27 +388,16 @@ templates:
             worker_startup_check_interval: 30
             worker_startup_timeout_secs: 1800
             worker_urls: []
-          - &id001
-            api_key: null
-            enable_trace: false
-            log_level: info
-            otlp_traces_endpoint: localhost:4317
-            tokenizer_path: null
+          - &id001 {api_key: null, enable_trace: false, log_level: info, otlp_traces_endpoint: 'localhost:4317', tokenizer_path: null}
           - &id002 {reasoning_parser: null, tool_call_parser: null}
           assignment_mode: random
           chat_template: null
           dp_aware: false
           model_path: null
         wandb_group: $RUN_ID_0002_$CI_COMMIT_NAME_github
-      - &id008
-        config_snapshot_name: tests/e2e/ckpt/test_fully_async_ckpt/run-0000
-        trainer_init_expected_num_cells: null
+      - &id008 {config_snapshot_name: tests/e2e/ckpt/test_fully_async_ckpt/run-0000, trainer_init_expected_num_cells: null}
       - &id009 {critic_load: null, ref_load: null, use_kl_loss: false}
-      - &id010
-        enable_sample_ownership_checker: true
-        kl_loss_type: low_var_kl
-        rm_type: deepscaler
-        train_backend: megatron
+      - &id010 {enable_sample_ownership_checker: true, kl_loss_type: low_var_kl, rm_type: deepscaler, train_backend: megatron}
       - &id011
         hf_checkpoint: /root/models/Qwen3-4B/
         sglang:
@@ -907,26 +862,10 @@ templates:
               weight_loader_prefetch_num_threads: 4
               weight_version: default
             - &id027 {attention_backend: null, chunked_prefill_size: null}
-            - &id019
-              cuda_graph_max_bs_decode: null
-              disable_shared_experts_fusion: false
-              dp_size: 1
-              dsa_decode_backend: null
-              dsa_prefill_backend: null
-              enable_dp_attention: false
-              enable_dp_lm_head: false
-              ep_size: 1
-              kv_cache_dtype: auto
-              max_running_requests: null
-              moe_dense_tp_size: null
-              page_size: null
-              tp_size: 1
-              watchdog_timeout: 300
-            - &id020
-              speculative_algorithm: null
-              speculative_eagle_topk: null
-              speculative_num_draft_tokens: null
-              speculative_num_steps: null
+            - &id019 {cuda_graph_max_bs_decode: null, disable_shared_experts_fusion: false, dp_size: 1, dsa_decode_backend: null,
+              dsa_prefill_backend: null, enable_dp_attention: false, enable_dp_lm_head: false, ep_size: 1, kv_cache_dtype: auto,
+              max_running_requests: null, moe_dense_tp_size: null, page_size: null, tp_size: 1, watchdog_timeout: 300}
+            - &id020 {speculative_algorithm: null, speculative_eagle_topk: null, speculative_num_draft_tokens: null, speculative_num_steps: null}
             chat_template: null
             cuda_graph_backend_prefill: disabled
             decode_log_interval: 40
@@ -935,16 +874,9 @@ templates:
           - <<: &id021 {name: default, update_weights: true}
             model_path: null
             server_groups:
-            - needs_offload: true
-              num_gpus_per_engine: 1
-              overrides: {model_path: /root/models/Qwen2.5-0.5B-Instruct/}
-              worker_type: &id022 {$enum: miles.backends.sglang_utils.sglang_api_client.WorkerType, name: REGULAR}
-      - &id012
-        input_key: messages
-        log_probs_max_tokens_per_gpu: null
-        max_tokens_per_gpu: null
-        num_rollout: 1
-        rollout_max_response_len: 8192
+            - {needs_offload: true, num_gpus_per_engine: 1, overrides: {model_path: /root/models/Qwen2.5-0.5B-Instruct/},
+              worker_type: &id022 {$enum: miles.backends.sglang_utils.sglang_api_client.WorkerType, name: REGULAR}}
+      - &id012 {input_key: messages, log_probs_max_tokens_per_gpu: null, max_tokens_per_gpu: null, num_rollout: 1, rollout_max_response_len: 8192}
       balance_data: false
       global_batch_size: 32
       init_expected_num_cells: {default: 2}
@@ -1744,74 +1676,21 @@ templates:
               yarn_beta_slow: null
               yarn_correction_range_round_to_int: null
               yarn_original_max_position_embeddings: null
-            - &id015
-              adam_beta1: 0.9
-              adam_eps: 1.0e-08
-              bf16: true
-              calculate_per_token_loss: false
-              clip_grad: 1.0
-              context_parallel_size: 1
-              deterministic_mode: false
-              finetune: true
-              fp16: false
-              lr: 1.0e-06
-              lr_decay_iters: null
-              lr_decay_style: constant
-              lr_warmup_fraction: null
-              lr_warmup_init: 0.0
-              lr_warmup_iters: 0
-              lr_wsd_decay_iters: null
-              memory_snapshot_path: snapshot.pickle
-              min_lr: 0.0
-              mtp_loss_scaling_factor: 0.2
-              mtp_num_layers: null
-              no_load_optim: true
-              no_load_rng: true
-              no_save_optim: false
-              optimizer: adam
-              profile_step_end: 12
-              profile_step_start: 10
-              record_memory_history: false
-              tensorboard_dir: null
-              use_pytorch_profiler: false
+            - &id015 {adam_beta1: 0.9, adam_eps: 1.0e-08, bf16: true, calculate_per_token_loss: false, clip_grad: 1.0, context_parallel_size: 1,
+              deterministic_mode: false, finetune: true, fp16: false, lr: 1.0e-06, lr_decay_iters: null, lr_decay_style: constant,
+              lr_warmup_fraction: null, lr_warmup_init: 0.0, lr_warmup_iters: 0, lr_wsd_decay_iters: null, memory_snapshot_path: snapshot.pickle,
+              min_lr: 0.0, mtp_loss_scaling_factor: 0.2, mtp_num_layers: null, no_load_optim: true, no_load_rng: true, no_save_optim: false,
+              optimizer: adam, profile_step_end: 12, profile_step_start: 10, record_memory_history: false, tensorboard_dir: null,
+              use_pytorch_profiler: false}
             - &id016 {adam_beta2: 0.98, weight_decay: 0.1}
-            - &id030
-              add_position_embedding: true
-              enable_experimental: false
-              expert_model_parallel_size: 1
-              group_query_attention: true
-              kv_channels: 128
-              kv_lora_rank: 32
-              layernorm_epsilon: 1.0e-06
-              make_vocab_size_divisible_by: 128
-              moe_enable_deepep: false
-              moe_ffn_hidden_size: null
-              moe_grouped_gemm: false
-              moe_layer_freq: 1
-              moe_permute_fusion: false
-              moe_router_bias_update_rate: 0.001
-              moe_router_dtype: null
-              moe_router_enable_expert_bias: false
-              moe_router_load_balancing_type: aux_loss
-              moe_router_pre_softmax: false
-              moe_router_score_function: softmax
-              moe_router_topk: 2
-              moe_router_topk_scaling_factor: null
-              moe_shared_expert_intermediate_size: null
-              moe_token_dispatcher_type: alltoall
-              multi_latent_attention: false
-              num_experts: null
-              optimizer_cpu_offload: false
-              overlap_cpu_optimizer_d2h_h2d: false
-              q_lora_rank: null
-              qk_head_dim: 128
-              rope_type: rope
-              rotary_base: 1000000
-              spec: null
-              use_precision_aware_optimizer: false
-              use_rotary_position_embeddings: true
-              v_head_dim: 128
-              vocab_size: 151936
+            - &id030 {add_position_embedding: true, enable_experimental: false, expert_model_parallel_size: 1, group_query_attention: true,
+              kv_channels: 128, kv_lora_rank: 32, layernorm_epsilon: 1.0e-06, make_vocab_size_divisible_by: 128, moe_enable_deepep: false,
+              moe_ffn_hidden_size: null, moe_grouped_gemm: false, moe_layer_freq: 1, moe_permute_fusion: false, moe_router_bias_update_rate: 0.001,
+              moe_router_dtype: null, moe_router_enable_expert_bias: false, moe_router_load_balancing_type: aux_loss, moe_router_pre_softmax: false,
+              moe_router_score_function: softmax, moe_router_topk: 2, moe_router_topk_scaling_factor: null, moe_shared_expert_intermediate_size: null,
+              moe_token_dispatcher_type: alltoall, multi_latent_attention: false, num_experts: null, optimizer_cpu_offload: false,
+              overlap_cpu_optimizer_d2h_h2d: false, q_lora_rank: null, qk_head_dim: 128, rope_type: rope, rotary_base: 1000000,
+              spec: null, use_precision_aware_optimizer: false, use_rotary_position_embeddings: true, v_head_dim: 128, vocab_size: 151936}
             - &id017 {disable_grad_buffers_cpu_backup: true, disable_param_buffers_cpu_backup: true}
             chat_template: null
             rank: 0
@@ -1914,34 +1793,11 @@ templates:
       - *id009
       - &id023 {enable_sample_ownership_checker: false, kl_loss_type: k1, train_backend: fsdp}
       - &id024 {trainer_actor_index: 0, trainer_init_expected_num_cells: 1, trainer_role: actor}
-      backend:
-        <<:
-        - *id006
-        - *id015
-        - *id016
-        - *id017
-        - &id025
-          backend_name: fsdp
-          dp_replicate_size: 1
-          fsdp_cpu_backend: gloo
-          fsdp_cpu_offload: false
-          fsdp_state_dict_cpu_offload: true
-          keep_fp32_master: true
-          lr_wsd_decay_style: null
-          override_lr_scheduler: false
-          use_checkpoint_lr_scheduler: true
-          wandb_run_name: null
-          warmup_ratio: 0.03
-        attn_implementation: flash_attention_3
-        config: null
-        global_batch_size: 32
-        gradient_checkpointing: true
-        load: null
-        num_layers: 36
-        rank: $RANK
-        rollout_indexer_topk_num_streams: null
-        wandb_project: miles-test_qwen3_0.6B_megatron_fsdp_align
-        world_size: 2
+      backend: {<<: [*id006, *id015, *id016, *id017, &id025 {backend_name: fsdp, dp_replicate_size: 1, fsdp_cpu_backend: gloo,
+            fsdp_cpu_offload: false, fsdp_state_dict_cpu_offload: true, keep_fp32_master: true, lr_wsd_decay_style: null,
+            override_lr_scheduler: false, use_checkpoint_lr_scheduler: true, wandb_run_name: null, warmup_ratio: 0.03}], attn_implementation: flash_attention_3,
+        config: null, global_batch_size: 32, gradient_checkpointing: true, load: null, num_layers: 36, rank: $RANK, rollout_indexer_topk_num_streams: null,
+        wandb_project: miles-test_qwen3_0.6B_megatron_fsdp_align, world_size: 2}
       balance_data: false
       config_snapshot_name: tests/e2e/fsdp/r3/test_glm47_flash_r3/run-0000
       hf_checkpoint: /root/models/Qwen3-4B
@@ -1971,10 +1827,7 @@ templates:
         - <<: *id021
           model_path: null
           server_groups:
-          - needs_offload: true
-            num_gpus_per_engine: 1
-            overrides: {model_path: /root/models/Qwen3-4B}
-            worker_type: *id022
+          - {needs_offload: true, num_gpus_per_engine: 1, overrides: {model_path: /root/models/Qwen3-4B}, worker_type: *id022}
       train_env_vars: {PYTORCH_CUDA_ALLOC_CONF: 'expandable_segments:True'}
       trainer_id: actor
       wandb_run_id: $WANDB_RUN_ID_0000
@@ -1989,30 +1842,15 @@ templates:
       - *id024
       - &id028 {colocate: false, offload_rollout: false, offload_train: false}
       apply_chat_template: false
-      backend:
-        <<:
-        - *id006
-        - *id015
-        - *id025
-        adam_beta2: 0.95
-        attn_implementation: flash_attention_2
-        config: null
-        global_batch_size: 32
-        gradient_checkpointing: false
-        load: null
-        num_layers: 40
-        rank: $RANK
-        rollout_indexer_topk_num_streams: null
-        wandb_project: null
-        weight_decay: 0.0
-        world_size: 4
+      backend: {<<: [*id006, *id015, *id025], adam_beta2: 0.95, attn_implementation: flash_attention_2, config: null, global_batch_size: 32,
+        gradient_checkpointing: false, load: null, num_layers: 40, rank: $RANK, rollout_indexer_topk_num_streams: null, wandb_project: null,
+        weight_decay: 0.0, world_size: 4}
       balance_data: false
       check_weight_update_equal: false
       config_snapshot_name: tests/e2e/sglang/test_session_server_multi_role/test_deepseekv4/run-0000
       custom_agent_function_path: {config: null, path: miles.utils.test_utils.session_verify_agent.run_agent}
-      custom_generate_function_path:
-        config: {max_seq_len: null, session_verify_cycles: 2, tool_call_failure_mode: append_tool}
-        path: miles.utils.test_utils.session_verify_agent.generate
+      custom_generate_function_path: {config: {max_seq_len: null, session_verify_cycles: 2, tool_call_failure_mode: append_tool},
+        path: miles.utils.test_utils.session_verify_agent.generate}
       debug_rollout_only: true
       eps_clip_high: 0.2
       hf_checkpoint: /root/models/DeepSeek-V4-Flash-FP8
@@ -2052,10 +1890,7 @@ templates:
         - <<: *id021
           model_path: null
           server_groups:
-          - needs_offload: false
-            num_gpus_per_engine: 4
-            overrides: {model_path: /root/models/DeepSeek-V4-Flash-FP8}
-            worker_type: *id022
+          - {needs_offload: false, num_gpus_per_engine: 4, overrides: {model_path: /root/models/DeepSeek-V4-Flash-FP8}, worker_type: *id022}
       sglang_router_policy: manual
       tito_model: deepseekv4
       train_env_vars: {}
@@ -2200,10 +2035,7 @@ templates:
         - <<: *id021
           model_path: null
           server_groups:
-          - needs_offload: true
-            num_gpus_per_engine: 2
-            overrides: {model_path: /root/models/GLM-5_4layer}
-            worker_type: *id022
+          - {needs_offload: true, num_gpus_per_engine: 2, overrides: {model_path: /root/models/GLM-5_4layer}, worker_type: *id022}
       train_env_vars: {}
       trainer_id: actor
       update_weight_buffer_size: 2147483648

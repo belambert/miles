@@ -1,5 +1,0 @@
---- fsdp
-+++ fsdp_ray_rpc
-@@ -1105 +1105 @@
--  worker_comm_backend: ray
-+  worker_comm_backend: rpc

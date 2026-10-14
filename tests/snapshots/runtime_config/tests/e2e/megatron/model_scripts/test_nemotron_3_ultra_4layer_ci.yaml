@@ -3,10 +3,8 @@ processes:
     diffs:
       checkpoint_load-0000:
         set:
-          <<: &id001
-            /args/backend/lr_decay_iters: 2
-            /args/backend/model_type: {$enum: megatron.core.enums.ModelType, name: encoder_or_decoder}
-            /args/backend/train_iters: 2
+          <<: &id001 {/args/backend/lr_decay_iters: 2, /args/backend/model_type: {$enum: megatron.core.enums.ModelType, name: encoder_or_decoder},
+            /args/backend/train_iters: 2}
           /args/backend/ckpt_step: null
           /args/backend/finetune: false
           /args/backend/load: /root/models/NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16-4layer
@@ -14,31 +12,17 @@ processes:
           /args/backend/no_load_rng: null
           /load: /root/models/NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16-4layer
           /local_checkpoint_manager: false
-      train_first_step-0000:
-        set:
-          <<: *id001
-          /role: actor
+      train_first_step-0000: {set: {<<: *id001, /role: actor}}
     ranks: [0, 1, 2, 3, 4, 5, 6, 7]
     template: trainer-megatron-02
   tests/e2e/megatron/model_scripts/test_nemotron_3_ultra_4layer_ci/run-0000/all/default/inference_controller:
-    diffs: &id005
-      router_endpoints-0000:
-        set:
-          <<: &id002
-            /args/sglang_model_routers: {default: {$tuple: [$HOST, $PORT]}}
-            /args/sglang_router_ip: $HOST
-            /args/sglang_router_port: $PORT
+    diffs: &id005 {router_endpoints-0000: {set: {<<: &id002 {/args/sglang_model_routers: {default: {$tuple: [$HOST, $PORT]}},
+            /args/sglang_router_ip: $HOST, /args/sglang_router_port: $PORT}}}}
     overrides:
       set:
         <<:
-        - &id003
-          /args/balance_data: true
-          /args/global_batch_size: 16
-          /args/init_expected_num_cells/default: 1
-          /args/input_key: prompt
-          /args/num_layers: 4
-          /args/num_rollout: 2
-          /args/wandb_project: miles-run_nemotron_3_ultra_550b_a55b
+        - &id003 {/args/balance_data: true, /args/global_batch_size: 16, /args/init_expected_num_cells/default: 1, /args/input_key: prompt,
+          /args/num_layers: 4, /args/num_rollout: 2, /args/wandb_project: miles-run_nemotron_3_ultra_550b_a55b}
         - &id004
           /args/ci_disable_logprobs_checker: true
           /args/config_snapshot_name: tests/e2e/megatron/model_scripts/test_nemotron_3_ultra_4layer_ci/run-0000
@@ -76,64 +60,33 @@ processes:
     template: inference_controller-01
   tests/e2e/megatron/model_scripts/test_nemotron_3_ultra_4layer_ci/run-0000/all/default/main:
     diffs:
-      router_endpoints-0000:
-        set:
-          <<: *id002
-          /args/wandb_run_id: $WANDB_RUN_ID_0000
+      router_endpoints-0000: {set: {<<: *id002, /args/wandb_run_id: $WANDB_RUN_ID_0000}}
       tracking_config-0000: {set: {/args/wandb_run_id: $WANDB_RUN_ID_0000}}
     overrides:
       set:
         <<:
         - *id003
         - *id004
-        - &id006
-          /args/raw_megatron/base_args/apply_rope_fusion: false
-          /args/raw_megatron/base_args/attention_backend/name: auto
-          /args/raw_megatron/base_args/data_parallel_size: 8
-          /args/raw_megatron/base_args/encoder_num_layers: 4
-          /args/raw_megatron/base_args/eval_global_batch_size: 16
-          /args/raw_megatron/base_args/expert_model_parallel_size: 8
-          /args/raw_megatron/base_args/ffn_hidden_size: 5120
-          /args/raw_megatron/base_args/finetune: false
-          /args/raw_megatron/base_args/global_batch_size: 16
-          /args/raw_megatron/base_args/hidden_size: 8192
-          /args/raw_megatron/base_args/layernorm_epsilon: 1.0e-05
-          /args/raw_megatron/base_args/load: null
-          /args/raw_megatron/base_args/moe_ffn_hidden_size: 5120
-          /args/raw_megatron/base_args/moe_grouped_gemm: true
-          /args/raw_megatron/base_args/moe_latent_size: 2048
-          /args/raw_megatron/base_args/moe_router_bias_update_rate: 0.0
-          /args/raw_megatron/base_args/moe_router_dtype: fp32
-          /args/raw_megatron/base_args/moe_router_enable_expert_bias: true
-          /args/raw_megatron/base_args/moe_router_group_topk: 1
-          /args/raw_megatron/base_args/moe_router_load_balancing_type: seq_aux_loss
-          /args/raw_megatron/base_args/moe_router_num_groups: 1
-          /args/raw_megatron/base_args/moe_router_pre_softmax: true
-          /args/raw_megatron/base_args/moe_router_score_function: sigmoid
-          /args/raw_megatron/base_args/moe_router_topk: 22
-          /args/raw_megatron/base_args/moe_router_topk_scaling_factor: 5.0
-          /args/raw_megatron/base_args/moe_shared_expert_intermediate_size: 10240
-          /args/raw_megatron/base_args/no_load_optim: null
-          /args/raw_megatron/base_args/no_load_rng: null
-          /args/raw_megatron/base_args/num_attention_heads: 64
-          /args/raw_megatron/base_args/num_experts: 512
-          /args/raw_megatron/base_args/num_layers: 4
-          /args/raw_megatron/base_args/num_query_groups: 2
-          /args/raw_megatron/base_args/optimizer_cpu_offload: true
-          /args/raw_megatron/base_args/overlap_cpu_optimizer_d2h_h2d: true
-          /args/raw_megatron/base_args/padded_vocab_size: 131072
-          /args/raw_megatron/base_args/position_embedding_type: none
-          /args/raw_megatron/base_args/qk_layernorm: false
-          /args/raw_megatron/base_args/rotary_base: 10000
-          /args/raw_megatron/base_args/sequence_parallel: false
-          /args/raw_megatron/base_args/swiglu: false
-          /args/raw_megatron/base_args/tensor_model_parallel_size: 1
-          /args/raw_megatron/base_args/tokenizer_model: /root/models/NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16-4layer
-          /args/raw_megatron/base_args/use_precision_aware_optimizer: true
-          /args/raw_megatron/base_args/use_rotary_position_embeddings: false
-          /args/raw_megatron/base_args/vocab_size: 131072
-          /args/raw_megatron/base_args/wandb_project: miles-run_nemotron_3_ultra_550b_a55b
-          /args/raw_megatron/base_args/world_size: 8
+        - &id006 {/args/raw_megatron/base_args/apply_rope_fusion: false, /args/raw_megatron/base_args/attention_backend/name: auto,
+          /args/raw_megatron/base_args/data_parallel_size: 8, /args/raw_megatron/base_args/encoder_num_layers: 4, /args/raw_megatron/base_args/eval_global_batch_size: 16,
+          /args/raw_megatron/base_args/expert_model_parallel_size: 8, /args/raw_megatron/base_args/ffn_hidden_size: 5120,
+          /args/raw_megatron/base_args/finetune: false, /args/raw_megatron/base_args/global_batch_size: 16, /args/raw_megatron/base_args/hidden_size: 8192,
+          /args/raw_megatron/base_args/layernorm_epsilon: 1.0e-05, /args/raw_megatron/base_args/load: null, /args/raw_megatron/base_args/moe_ffn_hidden_size: 5120,
+          /args/raw_megatron/base_args/moe_grouped_gemm: true, /args/raw_megatron/base_args/moe_latent_size: 2048, /args/raw_megatron/base_args/moe_router_bias_update_rate: 0.0,
+          /args/raw_megatron/base_args/moe_router_dtype: fp32, /args/raw_megatron/base_args/moe_router_enable_expert_bias: true,
+          /args/raw_megatron/base_args/moe_router_group_topk: 1, /args/raw_megatron/base_args/moe_router_load_balancing_type: seq_aux_loss,
+          /args/raw_megatron/base_args/moe_router_num_groups: 1, /args/raw_megatron/base_args/moe_router_pre_softmax: true,
+          /args/raw_megatron/base_args/moe_router_score_function: sigmoid, /args/raw_megatron/base_args/moe_router_topk: 22,
+          /args/raw_megatron/base_args/moe_router_topk_scaling_factor: 5.0, /args/raw_megatron/base_args/moe_shared_expert_intermediate_size: 10240,
+          /args/raw_megatron/base_args/no_load_optim: null, /args/raw_megatron/base_args/no_load_rng: null, /args/raw_megatron/base_args/num_attention_heads: 64,
+          /args/raw_megatron/base_args/num_experts: 512, /args/raw_megatron/base_args/num_layers: 4, /args/raw_megatron/base_args/num_query_groups: 2,
+          /args/raw_megatron/base_args/optimizer_cpu_offload: true, /args/raw_megatron/base_args/overlap_cpu_optimizer_d2h_h2d: true,
+          /args/raw_megatron/base_args/padded_vocab_size: 131072, /args/raw_megatron/base_args/position_embedding_type: none,
+          /args/raw_megatron/base_args/qk_layernorm: false, /args/raw_megatron/base_args/rotary_base: 10000, /args/raw_megatron/base_args/sequence_parallel: false,
+          /args/raw_megatron/base_args/swiglu: false, /args/raw_megatron/base_args/tensor_model_parallel_size: 1, /args/raw_megatron/base_args/tokenizer_model: /root/models/NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16-4layer,
+          /args/raw_megatron/base_args/use_precision_aware_optimizer: true, /args/raw_megatron/base_args/use_rotary_position_embeddings: false,
+          /args/raw_megatron/base_args/vocab_size: 131072, /args/raw_megatron/base_args/wandb_project: miles-run_nemotron_3_ultra_550b_a55b,
+          /args/raw_megatron/base_args/world_size: 8}
     template: main-01
   tests/e2e/megatron/model_scripts/test_nemotron_3_ultra_4layer_ci/run-0000/all/default/rollout_executor:
     diffs: *id005

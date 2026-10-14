@@ -3,16 +3,12 @@ processes:
     overrides:
       set:
         <<:
-        - &id005
-          /args/backend/disable_grad_buffers_cpu_backup: false
-          /args/backend/disable_param_buffers_cpu_backup: false
+        - &id005 {/args/backend/disable_grad_buffers_cpu_backup: false, /args/backend/disable_param_buffers_cpu_backup: false}
         - &id006 {/args/backend/eval_micro_batch_size: 16, /args/backend/micro_batch_size: 16}
         - &id001
           /args/colocate: false
           /args/config_snapshot_name: tests/e2e/precision/test_dsv4_bshd_thd_rollout_parity/run-0000
-          /args/custom_rm_path:
-            config: null
-            path: tests.e2e.precision.test_dsv4_bshd_thd_rollout_parity.deterministic_index_reward
+          /args/custom_rm_path: {config: null, path: tests.e2e.precision.test_dsv4_bshd_thd_rollout_parity.deterministic_index_reward}
           /args/debug_rollout_only: true
           /args/dump_details: /tmp/$TEMPORARY_DIRECTORY_dsv4_parity/rollout/dump_details
           /args/offload_rollout: false
@@ -25,10 +21,8 @@ processes:
           - model_path: null
             name: default
             server_groups:
-            - needs_offload: false
-              num_gpus_per_engine: 4
-              overrides: {model_path: /root/models/DeepSeek-V4-Flash-FP8-4layer}
-              worker_type: {$enum: miles.backends.sglang_utils.sglang_api_client.WorkerType, name: REGULAR}
+            - {needs_offload: false, num_gpus_per_engine: 4, overrides: {model_path: /root/models/DeepSeek-V4-Flash-FP8-4layer},
+              worker_type: {$enum: miles.backends.sglang_utils.sglang_api_client.WorkerType, name: REGULAR}}
             update_weights: true
           /args/sglang_server_concurrency: 1
           /args/train_memory_margin_bytes: 0
@@ -36,12 +30,8 @@ processes:
     ranks: [0, 1, 2, 3]
     template: trainer-megatron-02
   tests/e2e/precision/test_dsv4_bshd_thd_rollout_parity/run-0000/all/default/inference_controller:
-    diffs: &id002
-      router_endpoints-0000:
-        set:
-          /args/sglang_model_routers: {default: {$tuple: [$HOST, $PORT]}}
-          /args/sglang_router_ip: $HOST
-          /args/sglang_router_port: $PORT
+    diffs: &id002 {router_endpoints-0000: {set: {/args/sglang_model_routers: {default: {$tuple: [$HOST, $PORT]}}, /args/sglang_router_ip: $HOST,
+          /args/sglang_router_port: $PORT}}}
     overrides:
       set:
         <<: *id001
@@ -55,12 +45,8 @@ processes:
       set:
         <<:
         - *id001
-        - &id003
-          /args/raw_megatron/base_args/disable_grad_buffers_cpu_backup: false
-          /args/raw_megatron/base_args/disable_param_buffers_cpu_backup: false
-        - &id004
-          /args/raw_megatron/base_args/eval_micro_batch_size: 16
-          /args/raw_megatron/base_args/micro_batch_size: 16
+        - &id003 {/args/raw_megatron/base_args/disable_grad_buffers_cpu_backup: false, /args/raw_megatron/base_args/disable_param_buffers_cpu_backup: false}
+        - &id004 {/args/raw_megatron/base_args/eval_micro_batch_size: 16, /args/raw_megatron/base_args/micro_batch_size: 16}
         /args/init_expected_num_cells/default: 1
         /args/micro_batch_size: 16
         /args/qkv_format: bshd
@@ -95,10 +81,8 @@ processes:
     diffs: &id013
       checkpoint_load-0000:
         set:
-          <<: &id008
-            /args/backend/lr_decay_iters: 1
-            /args/backend/model_type: {$enum: megatron.core.enums.ModelType, name: encoder_or_decoder}
-            /args/backend/train_iters: 1
+          <<: &id008 {/args/backend/lr_decay_iters: 1, /args/backend/model_type: {$enum: megatron.core.enums.ModelType, name: encoder_or_decoder},
+            /args/backend/train_iters: 1}
           /args/backend/ckpt_step: null
           /args/backend/finetune: true
           /args/backend/load: /root/models/DeepSeek-V4-Flash-FP8-4layer_torch_dist
@@ -106,21 +90,15 @@ processes:
           /args/backend/no_load_rng: true
           /load: /root/models/DeepSeek-V4-Flash-FP8-4layer_torch_dist
           /local_checkpoint_manager: false
-      train_first_step-0000:
-        set:
-          <<: *id008
-          /role: actor
+      train_first_step-0000: {set: {<<: *id008, /role: actor}}
     overrides: &id009
       remove: &id010 [/args/init_expected_num_cells/default]
       set:
         <<:
-        - &id011
-          /args/ci_save_grad_norm: /tmp/$TEMPORARY_DIRECTORY_dsv4_parity/bshd_grad_norm.pt
-          /args/config_snapshot_name: tests/e2e/precision/test_dsv4_bshd_thd_rollout_parity/run-0001
-          /args/dump_details: /tmp/$TEMPORARY_DIRECTORY_dsv4_parity/bshd/dump_details
-          /args/save_debug_event_data: /tmp/$TEMPORARY_DIRECTORY_dsv4_parity/bshd/dump_details/events
-          /args/save_debug_train_data: /tmp/$TEMPORARY_DIRECTORY_dsv4_parity/bshd/dump_details/train_data/{rollout_id}_{rank}.pt
-          /args/save_debug_trajectory_data: /tmp/$TEMPORARY_DIRECTORY_dsv4_parity/bshd/dump_details/trajectory/{rollout_id}.jsonl
+        - &id011 {/args/ci_save_grad_norm: /tmp/$TEMPORARY_DIRECTORY_dsv4_parity/bshd_grad_norm.pt, /args/config_snapshot_name: tests/e2e/precision/test_dsv4_bshd_thd_rollout_parity/run-0001,
+          /args/dump_details: /tmp/$TEMPORARY_DIRECTORY_dsv4_parity/bshd/dump_details, /args/save_debug_event_data: /tmp/$TEMPORARY_DIRECTORY_dsv4_parity/bshd/dump_details/events,
+          /args/save_debug_train_data: '/tmp/$TEMPORARY_DIRECTORY_dsv4_parity/bshd/dump_details/train_data/{rollout_id}_{rank}.pt',
+          /args/save_debug_trajectory_data: '/tmp/$TEMPORARY_DIRECTORY_dsv4_parity/bshd/dump_details/trajectory/{rollout_id}.jsonl'}
         - &id012
           /args/debug_train_only: true
           /args/load_debug_rollout_data: /tmp/$TEMPORARY_DIRECTORY_dsv4_parity/rollout/dump_details/rollout_data/0.pt
@@ -175,13 +153,10 @@ processes:
         <<:
         - *id006
         - *id012
-        - &id014
-          /args/ci_save_grad_norm: /tmp/$TEMPORARY_DIRECTORY_dsv4_parity/thd_grad_norm.pt
-          /args/config_snapshot_name: tests/e2e/precision/test_dsv4_bshd_thd_rollout_parity/run-0002
-          /args/dump_details: /tmp/$TEMPORARY_DIRECTORY_dsv4_parity/thd/dump_details
-          /args/save_debug_event_data: /tmp/$TEMPORARY_DIRECTORY_dsv4_parity/thd/dump_details/events
-          /args/save_debug_train_data: /tmp/$TEMPORARY_DIRECTORY_dsv4_parity/thd/dump_details/train_data/{rollout_id}_{rank}.pt
-          /args/save_debug_trajectory_data: /tmp/$TEMPORARY_DIRECTORY_dsv4_parity/thd/dump_details/trajectory/{rollout_id}.jsonl
+        - &id014 {/args/ci_save_grad_norm: /tmp/$TEMPORARY_DIRECTORY_dsv4_parity/thd_grad_norm.pt, /args/config_snapshot_name: tests/e2e/precision/test_dsv4_bshd_thd_rollout_parity/run-0002,
+          /args/dump_details: /tmp/$TEMPORARY_DIRECTORY_dsv4_parity/thd/dump_details, /args/save_debug_event_data: /tmp/$TEMPORARY_DIRECTORY_dsv4_parity/thd/dump_details/events,
+          /args/save_debug_train_data: '/tmp/$TEMPORARY_DIRECTORY_dsv4_parity/thd/dump_details/train_data/{rollout_id}_{rank}.pt',
+          /args/save_debug_trajectory_data: '/tmp/$TEMPORARY_DIRECTORY_dsv4_parity/thd/dump_details/trajectory/{rollout_id}.jsonl'}
     ranks: [0, 1, 2, 3]
     template: trainer-megatron-02
   tests/e2e/precision/test_dsv4_bshd_thd_rollout_parity/run-0002/all/default/inference_controller:

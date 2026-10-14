@@ -1,8 +1,0 @@
---- megatron
-+++ megatron_opd_external
-@@ -266 +266 @@
--  opd_type: null
-+  opd_type: sglang
-@@ -1912 +1912 @@
--  use_opd: false
-+  use_opd: true

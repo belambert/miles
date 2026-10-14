@@ -1,8 +1,0 @@
---- fsdp
-+++ fsdp_debug_optimizer
-@@ -92 +92 @@
--  debug_disable_optimizer: false
-+  debug_disable_optimizer: true
-@@ -319 +319 @@
--    no_save_optim: false
-+    no_save_optim: true

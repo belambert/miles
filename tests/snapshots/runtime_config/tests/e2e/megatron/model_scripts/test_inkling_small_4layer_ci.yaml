@@ -3,10 +3,8 @@ processes:
     diffs:
       checkpoint_load-0000:
         set:
-          <<: &id001
-            /args/backend/lr_decay_iters: 8
-            /args/backend/model_type: {$enum: megatron.core.enums.ModelType, name: encoder_or_decoder}
-            /args/backend/train_iters: 8
+          <<: &id001 {/args/backend/lr_decay_iters: 8, /args/backend/model_type: {$enum: megatron.core.enums.ModelType, name: encoder_or_decoder},
+            /args/backend/train_iters: 8}
           /args/backend/ckpt_step: null
           /args/backend/finetune: true
           /args/backend/load: /root/models/Inkling-Small-4layer_torch_dist
@@ -14,33 +12,18 @@ processes:
           /args/backend/no_load_rng: true
           /load: /root/models/Inkling-Small-4layer_torch_dist
           /local_checkpoint_manager: false
-      train_first_step-0000:
-        set:
-          <<: *id001
-          /role: actor
+      train_first_step-0000: {set: {<<: *id001, /role: actor}}
     ranks: [0, 1, 2, 3]
     template: trainer-megatron-02
   tests/e2e/megatron/model_scripts/test_inkling_small_4layer_ci/run-0000/all/default/inference_controller:
-    diffs: &id005
-      router_endpoints-0000:
-        set:
-          <<: &id002
-            /args/sglang_model_routers: {default: {$tuple: [$HOST, $PORT]}}
-            /args/sglang_router_ip: $HOST
-            /args/sglang_router_port: $PORT
+    diffs: &id005 {router_endpoints-0000: {set: {<<: &id002 {/args/sglang_model_routers: {default: {$tuple: [$HOST, $PORT]}},
+            /args/sglang_router_ip: $HOST, /args/sglang_router_port: $PORT}}}}
     overrides:
       set:
         <<:
-        - &id003
-          /args/balance_data: true
-          /args/distributed_timeout_minutes: 30
-          /args/global_batch_size: 64
-          /args/init_expected_num_cells/default: 1
-          /args/input_key: prompt
-          /args/load: /root/models/Inkling-Small-4layer_torch_dist
-          /args/num_layers: 4
-          /args/num_rollout: 2
-          /args/wandb_project: miles-run_inkling
+        - &id003 {/args/balance_data: true, /args/distributed_timeout_minutes: 30, /args/global_batch_size: 64, /args/init_expected_num_cells/default: 1,
+          /args/input_key: prompt, /args/load: /root/models/Inkling-Small-4layer_torch_dist, /args/num_layers: 4, /args/num_rollout: 2,
+          /args/wandb_project: miles-run_inkling}
         - &id004
           /args/check_weight_update_skip_list: [visual., audio.]
           /args/ci_disable_kl_checker: true
@@ -73,10 +56,8 @@ processes:
           - model_path: null
             name: default
             server_groups:
-            - needs_offload: true
-              num_gpus_per_engine: 4
-              overrides: {model_path: /root/models/Inkling-Small-4layer}
-              worker_type: {$enum: miles.backends.sglang_utils.sglang_api_client.WorkerType, name: REGULAR}
+            - {needs_offload: true, num_gpus_per_engine: 4, overrides: {model_path: /root/models/Inkling-Small-4layer}, worker_type: {
+                $enum: miles.backends.sglang_utils.sglang_api_client.WorkerType, name: REGULAR}}
             update_weights: true
           /args/start_rollout_id: null
           /args/use_dynamic_batch_size: false
@@ -87,51 +68,28 @@ processes:
     template: inference_controller-01
   tests/e2e/megatron/model_scripts/test_inkling_small_4layer_ci/run-0000/all/default/main:
     diffs:
-      router_endpoints-0000:
-        set:
-          <<: *id002
-          /args/wandb_run_id: $WANDB_RUN_ID_0000
+      router_endpoints-0000: {set: {<<: *id002, /args/wandb_run_id: $WANDB_RUN_ID_0000}}
       tracking_config-0000: {set: {/args/wandb_run_id: $WANDB_RUN_ID_0000}}
     overrides:
       set:
         <<:
         - *id003
         - *id004
-        - &id006
-          /args/raw_megatron/base_args/apply_rope_fusion: false
-          /args/raw_megatron/base_args/attention_backend/name: auto
-          /args/raw_megatron/base_args/bias_dropout_fusion: false
-          /args/raw_megatron/base_args/check_for_nan_in_loss_and_grad: false
-          /args/raw_megatron/base_args/distributed_timeout_minutes: 30
-          /args/raw_megatron/base_args/encoder_num_layers: 4
-          /args/raw_megatron/base_args/eval_global_batch_size: 64
-          /args/raw_megatron/base_args/expert_model_parallel_size: 4
-          /args/raw_megatron/base_args/ffn_hidden_size: 2048
-          /args/raw_megatron/base_args/global_batch_size: 64
-          /args/raw_megatron/base_args/hidden_size: 4096
-          /args/raw_megatron/base_args/load: /root/models/Inkling-Small-4layer_torch_dist
-          /args/raw_megatron/base_args/masked_softmax_fusion: false
-          /args/raw_megatron/base_args/moe_ffn_hidden_size: 2048
-          /args/raw_megatron/base_args/moe_grouped_gemm: true
-          /args/raw_megatron/base_args/moe_router_enable_expert_bias: true
-          /args/raw_megatron/base_args/moe_router_load_balancing_type: seq_aux_loss
-          /args/raw_megatron/base_args/moe_router_pre_softmax: true
-          /args/raw_megatron/base_args/moe_router_score_function: sigmoid
-          /args/raw_megatron/base_args/moe_router_topk: 6
-          /args/raw_megatron/base_args/moe_shared_expert_intermediate_size: 2048
-          /args/raw_megatron/base_args/num_attention_heads: 32
-          /args/raw_megatron/base_args/num_experts: 256
-          /args/raw_megatron/base_args/num_layers: 4
-          /args/raw_megatron/base_args/num_query_groups: 8
-          /args/raw_megatron/base_args/padded_vocab_size: 201216
-          /args/raw_megatron/base_args/position_embedding_type: none
-          /args/raw_megatron/base_args/rotary_base: 10000
-          /args/raw_megatron/base_args/tensor_model_parallel_size: 4
-          /args/raw_megatron/base_args/tokenizer_model: /root/models/Inkling-Small-4layer
-          /args/raw_megatron/base_args/use_rotary_position_embeddings: false
-          /args/raw_megatron/base_args/vocab_size: 201024
-          /args/raw_megatron/base_args/wandb_project: miles-run_inkling
-          /args/raw_megatron/base_args/world_size: 4
+        - &id006 {/args/raw_megatron/base_args/apply_rope_fusion: false, /args/raw_megatron/base_args/attention_backend/name: auto,
+          /args/raw_megatron/base_args/bias_dropout_fusion: false, /args/raw_megatron/base_args/check_for_nan_in_loss_and_grad: false,
+          /args/raw_megatron/base_args/distributed_timeout_minutes: 30, /args/raw_megatron/base_args/encoder_num_layers: 4,
+          /args/raw_megatron/base_args/eval_global_batch_size: 64, /args/raw_megatron/base_args/expert_model_parallel_size: 4,
+          /args/raw_megatron/base_args/ffn_hidden_size: 2048, /args/raw_megatron/base_args/global_batch_size: 64, /args/raw_megatron/base_args/hidden_size: 4096,
+          /args/raw_megatron/base_args/load: /root/models/Inkling-Small-4layer_torch_dist, /args/raw_megatron/base_args/masked_softmax_fusion: false,
+          /args/raw_megatron/base_args/moe_ffn_hidden_size: 2048, /args/raw_megatron/base_args/moe_grouped_gemm: true, /args/raw_megatron/base_args/moe_router_enable_expert_bias: true,
+          /args/raw_megatron/base_args/moe_router_load_balancing_type: seq_aux_loss, /args/raw_megatron/base_args/moe_router_pre_softmax: true,
+          /args/raw_megatron/base_args/moe_router_score_function: sigmoid, /args/raw_megatron/base_args/moe_router_topk: 6,
+          /args/raw_megatron/base_args/moe_shared_expert_intermediate_size: 2048, /args/raw_megatron/base_args/num_attention_heads: 32,
+          /args/raw_megatron/base_args/num_experts: 256, /args/raw_megatron/base_args/num_layers: 4, /args/raw_megatron/base_args/num_query_groups: 8,
+          /args/raw_megatron/base_args/padded_vocab_size: 201216, /args/raw_megatron/base_args/position_embedding_type: none,
+          /args/raw_megatron/base_args/rotary_base: 10000, /args/raw_megatron/base_args/tensor_model_parallel_size: 4, /args/raw_megatron/base_args/tokenizer_model: /root/models/Inkling-Small-4layer,
+          /args/raw_megatron/base_args/use_rotary_position_embeddings: false, /args/raw_megatron/base_args/vocab_size: 201024,
+          /args/raw_megatron/base_args/wandb_project: miles-run_inkling, /args/raw_megatron/base_args/world_size: 4}
     template: main-01
   tests/e2e/megatron/model_scripts/test_inkling_small_4layer_ci/run-0000/all/default/rollout_executor:
     diffs: *id005

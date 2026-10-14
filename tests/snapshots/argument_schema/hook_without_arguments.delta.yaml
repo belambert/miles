@@ -1,0 +1,17 @@
+base: megatron
+base_sha256: 110c6f03505a8623d99e4bb88e022a5fddaf9c30e20f980808cdcc9835375e63
+edits:
+- at: 17
+  delete: 0
+  insert: |
+    - --custom-generate-function-path
+    - builtins.str
+- at: 178
+  delete: 1
+  insert: |2
+        custom_generate_function_path: builtins.str
+- at: 14594
+  delete: 2
+  insert: |2
+                ''mistral'', ''nemotron_3'', ''granite_thinking_parser'', ''interns1'', ''gemma4'', ''gigachat35'', ''inkling'',
+                ''iquest_q1'', ''cohere_command4''].'

@@ -3,10 +3,8 @@ processes:
     diffs:
       checkpoint_load-0000:
         set:
-          <<: &id001
-            /args/backend/lr_decay_iters: 5
-            /args/backend/model_type: {$enum: megatron.core.enums.ModelType, name: encoder_or_decoder}
-            /args/backend/train_iters: 5
+          <<: &id001 {/args/backend/lr_decay_iters: 5, /args/backend/model_type: {$enum: megatron.core.enums.ModelType, name: encoder_or_decoder},
+            /args/backend/train_iters: 5}
           /args/backend/ckpt_step: null
           /args/backend/finetune: true
           /args/backend/load: /root/ckpt/qwen3.8-flash-next-4layer_torch_dist
@@ -14,20 +12,12 @@ processes:
           /args/backend/no_load_rng: true
           /load: /root/ckpt/qwen3.8-flash-next-4layer_torch_dist
           /local_checkpoint_manager: false
-      train_first_step-0000:
-        set:
-          <<: *id001
-          /role: actor
+      train_first_step-0000: {set: {<<: *id001, /role: actor}}
     ranks: [0, 1, 2, 3, 4, 5, 6, 7]
     template: trainer-megatron-02
   tests/e2e/megatron/model_scripts/test_qwen3_8_next_4layer_ci/run-0000/all/default/inference_controller:
-    diffs: &id005
-      router_endpoints-0000:
-        set:
-          <<: &id002
-            /args/sglang_model_routers: {default: {$tuple: [$HOST, $PORT]}}
-            /args/sglang_router_ip: $HOST
-            /args/sglang_router_port: $PORT
+    diffs: &id005 {router_endpoints-0000: {set: {<<: &id002 {/args/sglang_model_routers: {default: {$tuple: [$HOST, $PORT]}},
+            /args/sglang_router_ip: $HOST, /args/sglang_router_port: $PORT}}}}
     overrides:
       set:
         <<:
@@ -37,9 +27,7 @@ processes:
           /args/ci_disable_kl_checker: true
           /args/ci_disable_logprobs_checker: true
           /args/config_snapshot_name: tests/e2e/megatron/model_scripts/test_qwen3_8_next_4layer_ci/run-0000
-          /args/custom_model_provider_path:
-            config: null
-            path: miles_plugins.models.qwen3_8_next.model_provider.get_qwen3_8_next_model_provider
+          /args/custom_model_provider_path: {config: null, path: miles_plugins.models.qwen3_8_next.model_provider.get_qwen3_8_next_model_provider}
           /args/hf_checkpoint: /root/models/Qwen3.8-Flash-Next-4layer
           /args/linear_attention_backend: flashqla
           /args/max_tokens_per_gpu: 8192
@@ -67,10 +55,8 @@ processes:
           - model_path: null
             name: default
             server_groups:
-            - needs_offload: true
-              num_gpus_per_engine: 4
-              overrides: {model_path: /root/models/Qwen3.8-Flash-Next-4layer}
-              worker_type: {$enum: miles.backends.sglang_utils.sglang_api_client.WorkerType, name: REGULAR}
+            - {needs_offload: true, num_gpus_per_engine: 4, overrides: {model_path: /root/models/Qwen3.8-Flash-Next-4layer},
+              worker_type: {$enum: miles.backends.sglang_utils.sglang_api_client.WorkerType, name: REGULAR}}
             update_weights: true
           /args/start_rollout_id: null
           /args/train_memory_margin_bytes: 3221225472
@@ -79,20 +65,12 @@ processes:
           /args/use_rollout_routing_replay: true
           /args/use_routing_replay: true
           /args/wandb_group: $RUN_ID_0000_$CI_COMMIT_NAME_github
-        - &id004
-          /args/balance_data: true
-          /args/distributed_timeout_minutes: 60
-          /args/input_key: prompt
-          /args/num_layers: 4
-          /args/rollout_temperature: 0.8
-          /args/wandb_project: miles-run_qwen3_8_next
+        - &id004 {/args/balance_data: true, /args/distributed_timeout_minutes: 60, /args/input_key: prompt, /args/num_layers: 4,
+          /args/rollout_temperature: 0.8, /args/wandb_project: miles-run_qwen3_8_next}
     template: inference_controller-01
   tests/e2e/megatron/model_scripts/test_qwen3_8_next_4layer_ci/run-0000/all/default/main:
     diffs:
-      router_endpoints-0000:
-        set:
-          <<: *id002
-          /args/wandb_run_id: $WANDB_RUN_ID_0000
+      router_endpoints-0000: {set: {<<: *id002, /args/wandb_run_id: $WANDB_RUN_ID_0000}}
       tracking_config-0000: {set: {/args/wandb_run_id: $WANDB_RUN_ID_0000}}
     overrides:
       set:

@@ -1,5 +1,0 @@
---- fsdp
-+++ fsdp_rollout_logprobs
-@@ -1084 +1084 @@
--  use_rollout_logprobs: false
-+  use_rollout_logprobs: true

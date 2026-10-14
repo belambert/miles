@@ -4,15 +4,10 @@ processes:
       checkpoint_load-0000:
         set:
           <<:
-          - &id001
-            /args/backend/ckpt_step: null
-            /args/backend/load: /root/models/Qwen2.5-0.5B-Instruct/
-            /load: /root/models/Qwen2.5-0.5B-Instruct/
-            /local_checkpoint_manager: false
-          - &id002
-            /args/backend/lr_decay_iters: 2
-            /args/backend/model_type: {$enum: megatron.core.enums.ModelType, name: encoder_or_decoder}
-            /args/backend/train_iters: 2
+          - &id001 {/args/backend/ckpt_step: null, /args/backend/load: /root/models/Qwen2.5-0.5B-Instruct/, /load: /root/models/Qwen2.5-0.5B-Instruct/,
+            /local_checkpoint_manager: false}
+          - &id002 {/args/backend/lr_decay_iters: 2, /args/backend/model_type: {$enum: megatron.core.enums.ModelType, name: encoder_or_decoder},
+            /args/backend/train_iters: 2}
           /args/backend/finetune: false
           /args/backend/no_load_optim: null
           /args/backend/no_load_rng: null
@@ -24,20 +19,12 @@ processes:
           /args/backend/finetune: true
           /args/backend/no_load_optim: true
           /args/backend/no_load_rng: true
-      train_first_step-0000:
-        set:
-          <<: *id002
-          /role: actor
+      train_first_step-0000: {set: {<<: *id002, /role: actor}}
     ranks: [0, 1, 2, 3]
     template: trainer-megatron-02
   tests/e2e/short/test_qwen2.5_0.5B_opd_sglang/run-0000/all/default/inference_controller:
-    diffs: &id006
-      router_endpoints-0000:
-        set:
-          <<: &id003
-            /args/sglang_model_routers: {default: {$tuple: [$HOST, $PORT]}}
-            /args/sglang_router_ip: $HOST
-            /args/sglang_router_port: $PORT
+    diffs: &id006 {router_endpoints-0000: {set: {<<: &id003 {/args/sglang_model_routers: {default: {$tuple: [$HOST, $PORT]}},
+            /args/sglang_router_ip: $HOST, /args/sglang_router_port: $PORT}}}}
     overrides:
       set:
         <<:
@@ -60,55 +47,28 @@ processes:
           /args/sglang/base_args/mem_fraction_static: 0.6
           /args/start_rollout_id: null
           /args/use_opd: true
-        - &id005
-          /args/log_probs_max_tokens_per_gpu: 9216
-          /args/max_tokens_per_gpu: 9216
-          /args/num_layers: 24
-          /args/num_rollout: 2
-          /args/rollout_max_response_len: 1024
-          /args/rollout_temperature: 0.8
-          /args/use_kl_loss: true
-          /args/wandb_project: miles-test_qwen2.5_0.5B_opd_sglang
+        - &id005 {/args/log_probs_max_tokens_per_gpu: 9216, /args/max_tokens_per_gpu: 9216, /args/num_layers: 24, /args/num_rollout: 2,
+          /args/rollout_max_response_len: 1024, /args/rollout_temperature: 0.8, /args/use_kl_loss: true, /args/wandb_project: miles-test_qwen2.5_0.5B_opd_sglang}
     template: inference_controller-01
   tests/e2e/short/test_qwen2.5_0.5B_opd_sglang/run-0000/all/default/main:
     diffs:
-      router_endpoints-0000:
-        set:
-          <<: *id003
-          /args/wandb_run_id: $WANDB_RUN_ID_0000
+      router_endpoints-0000: {set: {<<: *id003, /args/wandb_run_id: $WANDB_RUN_ID_0000}}
       tracking_config-0000: {set: {/args/wandb_run_id: $WANDB_RUN_ID_0000}}
     overrides:
       set:
         <<:
         - *id004
         - *id005
-        - &id007
-          /args/raw_megatron/base_args/add_qkv_bias: true
-          /args/raw_megatron/base_args/data_parallel_size: 4
-          /args/raw_megatron/base_args/encoder_num_layers: 24
-          /args/raw_megatron/base_args/eval_global_batch_size: 32
-          /args/raw_megatron/base_args/ffn_hidden_size: 4864
-          /args/raw_megatron/base_args/finetune: false
-          /args/raw_megatron/base_args/global_batch_size: 32
-          /args/raw_megatron/base_args/hidden_size: 896
-          /args/raw_megatron/base_args/kv_channels: 64
-          /args/raw_megatron/base_args/load: null
-          /args/raw_megatron/base_args/no_load_optim: null
-          /args/raw_megatron/base_args/no_load_rng: null
-          /args/raw_megatron/base_args/num_attention_heads: 14
-          /args/raw_megatron/base_args/num_layers: 24
-          /args/raw_megatron/base_args/num_query_groups: 2
-          /args/raw_megatron/base_args/padded_vocab_size: 151936
-          /args/raw_megatron/base_args/qk_layernorm: false
-          /args/raw_megatron/base_args/recompute_granularity: null
-          /args/raw_megatron/base_args/recompute_method: null
-          /args/raw_megatron/base_args/recompute_num_layers: null
-          /args/raw_megatron/base_args/sequence_parallel: false
-          /args/raw_megatron/base_args/tensor_model_parallel_size: 1
-          /args/raw_megatron/base_args/tokenizer_model: /root/models/Qwen2.5-0.5B-Instruct/
-          /args/raw_megatron/base_args/untie_embeddings_and_output_weights: false
-          /args/raw_megatron/base_args/wandb_project: miles-test_qwen2.5_0.5B_opd_sglang
-          /args/raw_megatron/base_args/world_size: 4
+        - &id007 {/args/raw_megatron/base_args/add_qkv_bias: true, /args/raw_megatron/base_args/data_parallel_size: 4, /args/raw_megatron/base_args/encoder_num_layers: 24,
+          /args/raw_megatron/base_args/eval_global_batch_size: 32, /args/raw_megatron/base_args/ffn_hidden_size: 4864, /args/raw_megatron/base_args/finetune: false,
+          /args/raw_megatron/base_args/global_batch_size: 32, /args/raw_megatron/base_args/hidden_size: 896, /args/raw_megatron/base_args/kv_channels: 64,
+          /args/raw_megatron/base_args/load: null, /args/raw_megatron/base_args/no_load_optim: null, /args/raw_megatron/base_args/no_load_rng: null,
+          /args/raw_megatron/base_args/num_attention_heads: 14, /args/raw_megatron/base_args/num_layers: 24, /args/raw_megatron/base_args/num_query_groups: 2,
+          /args/raw_megatron/base_args/padded_vocab_size: 151936, /args/raw_megatron/base_args/qk_layernorm: false, /args/raw_megatron/base_args/recompute_granularity: null,
+          /args/raw_megatron/base_args/recompute_method: null, /args/raw_megatron/base_args/recompute_num_layers: null, /args/raw_megatron/base_args/sequence_parallel: false,
+          /args/raw_megatron/base_args/tensor_model_parallel_size: 1, /args/raw_megatron/base_args/tokenizer_model: /root/models/Qwen2.5-0.5B-Instruct/,
+          /args/raw_megatron/base_args/untie_embeddings_and_output_weights: false, /args/raw_megatron/base_args/wandb_project: miles-test_qwen2.5_0.5B_opd_sglang,
+          /args/raw_megatron/base_args/world_size: 4}
     template: main-01
   tests/e2e/short/test_qwen2.5_0.5B_opd_sglang/run-0000/all/default/rollout_executor:
     diffs: *id006

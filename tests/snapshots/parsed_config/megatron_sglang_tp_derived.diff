@@ -1,8 +1,0 @@
---- megatron
-+++ megatron_sglang_tp_derived
-@@ -1209 +1209 @@
--  rollout_num_gpus_per_engine: 1
-+  rollout_num_gpus_per_engine: 2
-@@ -1831 +1831 @@
--      tp_size: 1
-+      tp_size: 2

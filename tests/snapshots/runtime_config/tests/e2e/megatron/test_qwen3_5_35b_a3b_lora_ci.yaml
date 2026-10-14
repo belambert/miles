@@ -3,31 +3,17 @@ processes:
     <<: &id005
       diffs:
         checkpoint_load-0000:
-          set:
-            <<: &id001 {/args/backend/lr_decay_iters: 1, /args/backend/train_iters: 1}
-            /args/backend/ckpt_step: null
-            /args/backend/finetune: false
-            /args/backend/load: /root/models/Qwen3.5-35B-A3B
-            /args/backend/no_load_optim: null
-            /args/backend/no_load_rng: null
-            /load: /root/models/Qwen3.5-35B-A3B
-            /local_checkpoint_manager: false
+          set: {<<: &id001 {/args/backend/lr_decay_iters: 1, /args/backend/train_iters: 1}, /args/backend/ckpt_step: null,
+            /args/backend/finetune: false, /args/backend/load: /root/models/Qwen3.5-35B-A3B, /args/backend/no_load_optim: null,
+            /args/backend/no_load_rng: null, /load: /root/models/Qwen3.5-35B-A3B, /local_checkpoint_manager: false}
         train_first_step-0000: {set: {<<: *id001, /role: actor}}
       ranks: [0, 1, 2, 3, 4, 5, 6, 7]
-    overrides: &id002
-      set:
-        <<: &id004
-          /args/config_snapshot_name: tests/e2e/megatron/test_qwen3_5_35b_a3b_lora_ci/run-0000
-          /args/experts_shared_outer_loras: true
-          /args/sglang/base_args/experts_shared_outer_loras: true
+    overrides: &id002 {set: {<<: &id004 {/args/config_snapshot_name: tests/e2e/megatron/test_qwen3_5_35b_a3b_lora_ci/run-0000,
+          /args/experts_shared_outer_loras: true, /args/sglang/base_args/experts_shared_outer_loras: true}}}
     template: trainer-megatron-02
   tests/e2e/megatron/test_qwen3_5_35b_a3b_lora_ci/run-0000/all/default/inference_controller:
-    diffs: &id003
-      router_endpoints-0000:
-        set:
-          /args/sglang_model_routers: {default: {$tuple: [$HOST, $PORT]}}
-          /args/sglang_router_ip: $HOST
-          /args/sglang_router_port: $PORT
+    diffs: &id003 {router_endpoints-0000: {set: {/args/sglang_model_routers: {default: {$tuple: [$HOST, $PORT]}}, /args/sglang_router_ip: $HOST,
+          /args/sglang_router_port: $PORT}}}
     overrides: *id002
     template: inference_controller-01
   tests/e2e/megatron/test_qwen3_5_35b_a3b_lora_ci/run-0000/all/default/main:
@@ -39,22 +25,15 @@ processes:
     overrides: *id002
     template: rollout_executor-01
   tests/e2e/megatron/test_qwen3_5_35b_a3b_lora_ci/run-0000/all/default/trainer_controller_actor:
-    overrides:
-      set:
-        <<: *id004
-        /args/backend/rank: 0
+    overrides: {set: {<<: *id004, /args/backend/rank: 0}}
     template: trainer-megatron-02
   tests/e2e/megatron/test_qwen3_5_35b_a3b_lora_ci/run-0000/all/default/worker_manager:
     overrides: *id002
     template: worker_manager-01
   tests/e2e/megatron/test_qwen3_5_35b_a3b_lora_ci/run-0001/all/default/actor_cell00000:
     <<: *id005
-    overrides: &id006
-      set:
-        <<: &id007
-          /args/config_snapshot_name: tests/e2e/megatron/test_qwen3_5_35b_a3b_lora_ci/run-0001
-          /args/sglang/base_args/lora_use_virtual_experts: false
-          /args/sglang_lora_use_virtual_experts: false
+    overrides: &id006 {set: {<<: &id007 {/args/config_snapshot_name: tests/e2e/megatron/test_qwen3_5_35b_a3b_lora_ci/run-0001,
+          /args/sglang/base_args/lora_use_virtual_experts: false, /args/sglang_lora_use_virtual_experts: false}}}
     template: trainer-megatron-02
   tests/e2e/megatron/test_qwen3_5_35b_a3b_lora_ci/run-0001/all/default/inference_controller:
     diffs: *id003
@@ -69,10 +48,7 @@ processes:
     overrides: *id006
     template: rollout_executor-01
   tests/e2e/megatron/test_qwen3_5_35b_a3b_lora_ci/run-0001/all/default/trainer_controller_actor:
-    overrides:
-      set:
-        <<: *id007
-        /args/backend/rank: 0
+    overrides: {set: {<<: *id007, /args/backend/rank: 0}}
     template: trainer-megatron-02
   tests/e2e/megatron/test_qwen3_5_35b_a3b_lora_ci/run-0001/all/default/worker_manager:
     overrides: *id006
@@ -126,10 +102,8 @@ shared_overrides:
         - model_path: null
           name: default
           server_groups:
-          - needs_offload: true
-            num_gpus_per_engine: 8
-            overrides: {model_path: /root/models/Qwen3.5-35B-A3B}
-            worker_type: {$enum: miles.backends.sglang_utils.sglang_api_client.WorkerType, name: REGULAR}
+          - {needs_offload: true, num_gpus_per_engine: 8, overrides: {model_path: /root/models/Qwen3.5-35B-A3B}, worker_type: {
+              $enum: miles.backends.sglang_utils.sglang_api_client.WorkerType, name: REGULAR}}
           update_weights: true
         /args/start_rollout_id: null
         /args/target_modules: all-linear
@@ -138,12 +112,8 @@ shared_overrides:
         /args/wandb_group: null
         /args/wandb_key: null
         /args/wandb_random_suffix: true
-      - &id010
-        /args/global_batch_size: 64
-        /args/init_expected_num_cells/default: 1
-        /args/num_layers: 40
-        /args/save: /personal/checkpoints/$RUN_ID_0000
-        /args/save_interval: 1
+      - &id010 {/args/global_batch_size: 64, /args/init_expected_num_cells/default: 1, /args/num_layers: 40, /args/save: /personal/checkpoints/$RUN_ID_0000,
+        /args/save_interval: 1}
       /args/wandb_run_id: null
   main-01:
     set:

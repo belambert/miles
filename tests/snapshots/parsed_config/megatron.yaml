@@ -1,4 +1,7 @@
 config:
+  <<: &id001 {async_save: false, ckpt_step: null, distributed_backend: nccl, distributed_timeout_minutes: 10, eval_interval: null,
+    global_batch_size: 1, load: null, low_memory_resume: false, micro_batch_size: 1, num_layers: 1, rollout_indexer_topk_num_streams: null,
+    save: null, save_interval: null, seed: 1234, wandb_project: null}
   actor_num_gpus_per_node: 1
   actor_num_nodes: 1
   advantage_estimator: grpo
@@ -10,7 +13,6 @@ config:
   apply_chat_template_kwargs: {}
   async_data_buffer_capacity_factor: 2.0
   async_max_concurrent_samples: null
-  async_save: false
   async_unused_samples_handler: drop
   balance_by_flops: false
   balance_data: false
@@ -45,7 +47,6 @@ config:
   ci_save_model_hash: false
   ci_test: false
   ci_tito_special_token_count_threshold: 0.0
-  ckpt_step: null
   clear_quantized_weight_workspaces_on_offload: true
   cluster_backend: ray
   colocate: false
@@ -63,9 +64,7 @@ config:
   custom_convert_samples_to_train_data_path: null
   custom_eval_rollout_log_function_path: null
   custom_generate_function_path: null
-  custom_inference_engine_provider_path:
-    config: null
-    path: miles.ray.specs.inference.backend_inference_engine_provider
+  custom_inference_engine_provider_path: {config: null, path: miles.ray.specs.inference.backend_inference_engine_provider}
   custom_loss_function_path: null
   custom_megatron_before_log_prob_hook_path: null
   custom_megatron_before_train_step_hook_path: null
@@ -85,9 +84,7 @@ config:
   dashboard_sglang_scrape_interval: 2.0
   dashboard_sglang_scrape_mode: auto
   data_pad_size_multiplier: 128
-  data_source_path:
-    config: null
-    path: miles.rollout.data_source.RolloutDataSource
+  data_source_path: {config: null, path: miles.rollout.data_source.RolloutDataSource}
   debug_deterministic_collective: false
   debug_disable_optimizer: false
   debug_exit_after_rollout: null
@@ -99,8 +96,6 @@ config:
   deploy_component: all
   deploy_instance_id: null
   disable_rollout_trim_samples: false
-  distributed_backend: nccl
-  distributed_timeout_minutes: 10
   dsa_attention_backend: tilelang
   dsa_impl: miles
   dsv4_impl: megatron
@@ -126,12 +121,9 @@ config:
   eps_clip_high: 0.2
   eval_config: null
   eval_datasets: []
-  eval_function_path:
-    config: null
-    path: miles.rollout.inference_rollout.inference_rollout_common.InferenceRolloutFn
+  eval_function_path: &id002 {config: null, path: miles.rollout.inference_rollout.inference_rollout_common.InferenceRolloutFn}
   eval_hf_dir: null
   eval_input_key: null
-  eval_interval: null
   eval_keep_snapshots: 2
   eval_label_key: null
   eval_max_context_len: null
@@ -151,16 +143,13 @@ config:
   eval_uses_snapshots: false
   exclude_modules: null
   experts_shared_outer_loras: false
-  extra_high_precision_layers_hf:
-    $tuple: []
-  extra_high_precision_layers_megatron:
-    $tuple: []
+  extra_high_precision_layers_hf: {$tuple: []}
+  extra_high_precision_layers_megatron: {$tuple: []}
   fetch_trajectory_retry_times: -1
   ft_components: []
   fully_async: false
   gamma: 1.0
   get_mismatch_metrics: false
-  global_batch_size: 1
   group_rm: false
   grpo_std_normalization: false
   hf_checkpoint: null
@@ -168,10 +157,7 @@ config:
   http_proxy: null
   indep_dp: false
   inference_controller_addr: null
-  inference_runtime_mut_state:
-    engine_count: 0
-    eval_engine_count: 0
-    gpu_count: 0
+  inference_runtime_mut_state: {engine_count: 0, eval_engine_count: 0, gpu_count: 0}
   init_expected_num_cells: {}
   input_key: input
   keep_old_actor: false
@@ -181,7 +167,6 @@ config:
   label_key: null
   lambd: 1.0
   linear_attention_backend: fla
-  load: null
   load_debug_rollout_data: null
   load_debug_rollout_data_subsample: null
   log_correct_samples: false
@@ -204,7 +189,6 @@ config:
   lora_type: lora
   loss_mask_type: qwen
   loss_type: policy_loss
-  low_memory_resume: false
   mask_offpolicy_in_partial_rollout: false
   max_tokens_per_gpu: null
   max_weight_staleness: null
@@ -214,7 +198,6 @@ config:
   memory_snapshot_num_steps: null
   metadata_key: metadata
   mfu_peak_tflops: null
-  micro_batch_size: 1
   miles_dsa_topk_backend: torch
   miles_router_health_check_failure_threshold: 3
   miles_router_max_connections: null
@@ -240,16 +223,13 @@ config:
   num_critic_only_steps: 0
   num_epoch: null
   num_gpus_per_node: 8
-  num_layers: 1
   num_rollout: 1
   num_steps_per_rollout: null
   object_store_backend: ray
   observe_training_entropy: false
   offload: false
   offload_rollout: false
-  offload_rollout_level:
-  - kv_cache
-  - weight
+  offload_rollout_level: [kv_cache, weight]
   offload_train: false
   offload_train_disk_chunk_mb: 256
   offload_train_disk_dir: null
@@ -271,8 +251,7 @@ config:
   pause_generation_mode: retract
   pin_rollout_manager_to_head: false
   prefill_num_servers: null
-  profile_target:
-  - train_overall
+  profile_target: [train_overall]
   prometheus_port: 9090
   prometheus_run_name: null
   prompt_data: null
@@ -280,6 +259,7 @@ config:
   raw_fsdp: null
   raw_megatron:
     base_args:
+      <<: *id001
       _is_global_batch_size_explicitly_specified: false
       account_for_embedding_in_pipeline_split: false
       account_for_loss_in_pipeline_split: false
@@ -308,11 +288,8 @@ config:
       async_ckpt_cpu_priority: 10
       async_ckpt_io_priority: 3
       async_ckpt_use_cpu_shm: false
-      async_save: false
       async_strategy: mcore
-      attention_backend:
-        $enum: megatron.core.transformer.enums.AttnBackend
-        name: auto
+      attention_backend: {$enum: megatron.core.transformer.enums.AttnBackend, name: auto}
       attention_dropout: 0.1
       attention_output_gate: false
       attention_softmax_in_fp32: false
@@ -352,7 +329,6 @@ config:
       ckpt_fully_parallel_save_deprecated: false
       ckpt_fully_parallel_save_process_group: dp
       ckpt_load_validate_sharding_integrity: true
-      ckpt_step: null
       classes_fraction: 1.0
       clip_grad: 1.0
       clone_scatter_output_in_embedding: true
@@ -361,8 +337,7 @@ config:
       consumed_train_samples: 0
       consumed_valid_samples: 0
       context_parallel_size: 1
-      cp_comm_type:
-      - p2p
+      cp_comm_type: [p2p]
       cp_partition_mode: zigzag
       cpu_offloading_num_layers: 0
       cpu_offloading_retain_pinned_cpu_buffers: false
@@ -434,8 +409,6 @@ config:
       dist_ckpt_workers: 1
       distrib_optim_fully_reshardable_mem_efficient: false
       distribute_saved_activations: false
-      distributed_backend: nccl
-      distributed_timeout_minutes: 10
       distributed_timeout_seconds_after_init: null
       dsa_cp_balance_indexer: false
       dsa_indexer_head_dim: null
@@ -478,23 +451,18 @@ config:
       error_injection_rate: 0
       error_injection_type: transient_error
       eval_global_batch_size: 1
-      eval_interval: null
       eval_iters: 100
       eval_micro_batch_size: 1
       evidence_data_path: null
       exit_duration_in_mins: null
       exit_interval: null
       exit_on_missing_checkpoint: false
-      exit_signal:
-        $enum: signal.Signals
-        name: SIGTERM
+      exit_signal: {$enum: signal.Signals, name: SIGTERM}
       exit_signal_handler: false
       exit_signal_handler_for_dataloader: false
       exit_signal_handler_for_training: false
-      exp_avg_dtype:
-        $torch: torch.float32
-      exp_avg_sq_dtype:
-        $torch: torch.float32
+      exp_avg_dtype: {$torch: torch.float32}
+      exp_avg_sq_dtype: {$torch: torch.float32}
       experimental_attention_variant: null
       expert_model_parallel_size: 1
       expert_tensor_parallel_size: 1
@@ -560,7 +528,6 @@ config:
       fused_residual_rmsnorm: false
       gdn_conv_pad_alignment: null
       gdn_pre_gated_delta_rule_fusion: false
-      global_batch_size: 1
       glu_linear_offset: 0.0
       gpu_sniff_test_interval: null
       grad_reduce_in_bf16: false
@@ -597,9 +564,7 @@ config:
       inference_batch_times_seqlen_threshold: -1
       inference_coordinator_port: null
       inference_cuda_graph_all_prefills: false
-      inference_cuda_graph_scope:
-        $enum: megatron.core.transformer.enums.InferenceCudaGraphScope
-        name: none
+      inference_cuda_graph_scope: {$enum: megatron.core.transformer.enums.InferenceCudaGraphScope, name: none}
       inference_disable_ep_consensus: false
       inference_disable_triton_nvls_kernels: false
       inference_dynamic_batching: false
@@ -677,7 +642,6 @@ config:
       linear_value_head_dim: 128
       lion_beta1: 0.95
       lion_beta2: 0.98
-      load: null
       load_main_params_from_ckpt: false
       local_rank: 0
       log_device_memory_used: false
@@ -710,7 +674,6 @@ config:
       logits_save_top_p_min_k: 1
       loss_scale: null
       loss_scale_window: 1000
-      low_memory_resume: false
       lr: 1.0e-06
       lr_decay_iters: null
       lr_decay_samples: null
@@ -722,16 +685,12 @@ config:
       lr_wsd_decay_iters: null
       lr_wsd_decay_samples: null
       lr_wsd_decay_style: exponential
-      main_grads_dtype:
-        $torch: torch.float32
-      main_params_dtype:
-        $torch: torch.float32
+      main_grads_dtype: {$torch: torch.float32}
+      main_params_dtype: {$torch: torch.float32}
       make_vocab_size_divisible_by: 128
       mamba_head_dim: 64
-      mamba_inference_conv_states_dtype:
-        $torch: torch.bfloat16
-      mamba_inference_ssm_states_dtype:
-        $torch: torch.bfloat16
+      mamba_inference_conv_states_dtype: {$torch: torch.bfloat16}
+      mamba_inference_ssm_states_dtype: {$torch: torch.bfloat16}
       mamba_num_groups: 8
       mamba_num_heads: null
       mamba_state_dim: 128
@@ -750,8 +709,7 @@ config:
       megatron_fsdp_enable_fine_grained_param_gather: false
       megatron_fsdp_grad_comm_dtype: null
       megatron_fsdp_main_grads_dtype: null
-      megatron_fsdp_main_params_dtype:
-        $torch: torch.float32
+      megatron_fsdp_main_params_dtype: {$torch: torch.float32}
       megatron_fsdp_max_pool_double_buffer: false
       megatron_fsdp_prefetch_recompute_forward_weights: false
       memory_snapshot_path: snapshot.pickle
@@ -760,7 +718,6 @@ config:
       mhc_init_gating_factor: 0.01
       mhc_recompute_layer_num: null
       mhc_sinkhorn_iterations: 20
-      micro_batch_size: 1
       microbatch_group_size_per_vp_stage: null
       mid_level_dataset_surplus: 0.005
       min_dynamic_context_parallel_size: 1
@@ -893,7 +850,6 @@ config:
       num_dataset_builder_threads: 1
       num_distributed_optimizer_instances: 1
       num_experts: null
-      num_layers: 1
       num_layers_at_end_in_bf16: 1
       num_layers_at_start_in_bf16: 1
       num_layers_per_virtual_pipeline_stage: null
@@ -934,8 +890,7 @@ config:
       pad_packed_seq_alignment: null
       pad_vocab_size: true
       padded_vocab_size: null
-      params_dtype:
-        $torch: torch.bfloat16
+      params_dtype: {$torch: torch.bfloat16}
       patch_dim: 16
       per_dataset_sequences_path: null
       per_split_data_args_path: null
@@ -1017,7 +972,6 @@ config:
       rl_training_cuda_graphs: false
       rl_use_sequence_packing: false
       rl_verify_model_weights_swap: false
-      rollout_indexer_topk_num_streams: null
       rope_scaling_factor: 8.0
       rope_type: rope
       rotary_base: 10000
@@ -1028,15 +982,12 @@ config:
       rotary_seq_len_interpolation_factor: null
       run_workload_inspector_server: false
       sample_rate: 1.0
-      save: null
       save_activations_interval: null
       save_dgrads_interval: null
-      save_interval: null
       save_params_interval: null
       save_retain_interval: null
       save_tokens_per_expert_interval: null
       save_wgrads_interval: null
-      seed: 1234
       seq_length: 4096
       sequence_packing_scheduler: null
       sequence_parallel: false
@@ -1154,7 +1105,6 @@ config:
       vocab_size: null
       wandb_entity: null
       wandb_exp_name: null
-      wandb_project: null
       wandb_save_dir: null
       weight_decay: 0.01
       weight_decay_incr_style: constant
@@ -1168,11 +1118,7 @@ config:
       yarn_correction_range_round_to_int: null
       yarn_original_max_position_embeddings: null
     trainers:
-    - actor_index: 0
-      model_id: null
-      overrides: {}
-      role: actor
-      trainer_id: actor
+    - {actor_index: 0, model_id: null, overrides: {}, role: actor, trainer_id: actor}
   raw_torchtitan: null
   recompute_logprobs_via_prefill: false
   recompute_loss_function: false
@@ -1193,15 +1139,12 @@ config:
   rollout_external: false
   rollout_external_engine_addrs: null
   rollout_external_router_pd: false
-  rollout_function_path:
-    config: null
-    path: miles.rollout.inference_rollout.inference_rollout_common.InferenceRolloutFn
+  rollout_function_path: *id002
   rollout_global_dataset: true
   rollout_health_check_failure_threshold: 1
   rollout_health_check_first_wait: 0.0
   rollout_health_check_interval: 30.0
   rollout_health_check_timeout: 30.0
-  rollout_indexer_topk_num_streams: null
   rollout_max_context_len: null
   rollout_max_prompt_len: null
   rollout_max_response_len: null
@@ -1221,8 +1164,9 @@ config:
   rollout_top_logprobs_num: 0
   rollout_top_p: 1.0
   router_args:
+    <<: &id003 {api_key: null, enable_trace: false, log_level: info, otlp_traces_endpoint: 'localhost:4317', reasoning_parser: null,
+      tokenizer_path: null, tool_call_parser: null}
     allow_requests_without_routing_key: false
-    api_key: null
     assignment_mode: random
     backend: sglang
     balance_abs_threshold: 64
@@ -1248,7 +1192,6 @@ config:
     disable_retries: false
     dp_aware: false
     enable_igw: false
-    enable_trace: false
     eviction_interval_secs: 60
     health_check_endpoint: /health
     health_check_interval_secs: 60
@@ -1262,7 +1205,6 @@ config:
     jwt_jwks_uri: null
     jwt_role_mapping: []
     log_dir: null
-    log_level: info
     max_concurrent_requests: -1
     max_idle_secs: 14400
     max_payload_size: 536870912
@@ -1278,7 +1220,6 @@ config:
     oracle_tns_alias: null
     oracle_username: null
     oracle_wallet_path: null
-    otlp_traces_endpoint: localhost:4317
     pd_disaggregation: false
     policy: cache_aware
     postgres_db_url: null
@@ -1292,7 +1233,6 @@ config:
     queue_size: 100
     queue_timeout_secs: 60
     rate_limit_tokens_per_second: null
-    reasoning_parser: null
     redis_pool_max: 16
     redis_retention_days: 30
     redis_url: null
@@ -1315,27 +1255,22 @@ config:
     tokenizer_cache_enable_l1: false
     tokenizer_cache_l0_max_entries: 10000
     tokenizer_cache_l1_max_memory: 52428800
-    tokenizer_path: null
-    tool_call_parser: null
     worker_startup_check_interval: 30
     worker_startup_timeout_secs: 1800
     worker_urls: []
   run_uuid: 0123456789abcdef
   sample_ownership_grace_steps: 10
-  save: null
   save_debug_event_data: null
   save_debug_rollout_data: null
   save_debug_train_data: null
   save_debug_trajectory_data: null
   save_hf: null
-  save_interval: null
   save_local_weight_checksum: false
   save_trigger_sentinel: null
   score_centering_is: none
   score_centering_mis_high: 5.0
   score_centering_mis_low: 0.5
   score_centering_tis_clip: 2.0
-  seed: 1234
   session_message_matcher: strict
   session_sample_picker_path: miles.rollout.session.v2.picker_hub.drop_same_prompt_retries
   session_sample_postprocessor_path: miles.rollout.session.v2.postprocessor_hub.default_postprocess
@@ -1346,11 +1281,11 @@ config:
   session_server_workers: 32
   sglang:
     base_args:
+      <<: *id003
       abort_on_priority_when_disabled: false
       admin_api_key: null
       allow_auto_truncate: false
       allowed_media_domains: []
-      api_key: null
       asr_max_buffer_seconds: 60
       asr_max_concurrent_sessions: 32
       attention_backend: null
@@ -1543,7 +1478,6 @@ config:
       enable_torch_compile_debug_mode: false
       enable_torch_symm_mem: false
       enable_tp_lm_head_all_to_all: null
-      enable_trace: false
       enable_two_batch_overlap: false
       enable_unified_cache_external_linker: false
       enable_unified_memory: false
@@ -1642,7 +1576,6 @@ config:
       load_format: auto
       load_publish_endpoint: null
       load_snapshot_publish_interval: 15
-      log_level: info
       log_level_http: null
       log_requests: false
       log_requests_format: text
@@ -1709,7 +1642,6 @@ config:
       offload_prefetch_step: 1
       optimistic_prefill_attempts: 0
       otlp_service_name: null
-      otlp_traces_endpoint: localhost:4317
       page_size: null
       pdmux_config_path: null
       ple_offload_backend: pinned
@@ -1739,7 +1671,6 @@ config:
       radix_cache_backend: null
       radix_eviction_policy: lru
       radix_eviction_policy_config: null
-      reasoning_parser: null
       remote_instance_weight_loader_backend: nccl
       remote_instance_weight_loader_seed_instance_ip: null
       remote_instance_weight_loader_seed_instance_service_port: null
@@ -1823,9 +1754,7 @@ config:
       tokenizer_metrics_allowed_custom_labels: null
       tokenizer_metrics_custom_labels_header: x-custom-labels
       tokenizer_mode: auto
-      tokenizer_path: null
       tokenizer_worker_num: 1
-      tool_call_parser: null
       tool_server: null
       torch_compile_max_bs: 32
       tp_size: 1
@@ -1857,8 +1786,7 @@ config:
   sglang_router_policy: null
   sglang_router_port: null
   sglang_router_request_timeout_secs: 14400
-  sglang_scaling:
-    groups: {}
+  sglang_scaling: {groups: {}}
   sglang_server_concurrency: 512
   skip_actor_forward_only: false
   skip_eval_before_train: false
@@ -1930,7 +1858,6 @@ config:
   wandb_host: null
   wandb_key: null
   wandb_mode: null
-  wandb_project: null
   wandb_random_suffix: true
   wandb_run_id: null
   wandb_team: null

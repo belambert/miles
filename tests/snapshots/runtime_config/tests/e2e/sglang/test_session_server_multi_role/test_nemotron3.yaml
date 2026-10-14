@@ -1,44 +1,18 @@
 processes:
   tests/e2e/sglang/test_session_server_multi_role/test_nemotron3/run-0000/all/default/actor_cell00000:
     <<: &id011 {diffs: {train_first_step-0000: {set: {/role: actor}}}, ranks: [0, 1]}
-    overrides:
-      set:
-        <<:
-        - &id009 {/args/backend/num_layers: 52, /args/backend/world_size: 2}
-        - &id001
-          /args/config_snapshot_name: tests/e2e/sglang/test_session_server_multi_role/test_nemotron3/run-0000
-          /args/use_session_server: v1
+    overrides: {set: {<<: [&id009 {/args/backend/num_layers: 52, /args/backend/world_size: 2}, &id001 {/args/config_snapshot_name: tests/e2e/sglang/test_session_server_multi_role/test_nemotron3/run-0000,
+            /args/use_session_server: v1}]}}
     template: trainer-fsdp-02
   tests/e2e/sglang/test_session_server_multi_role/test_nemotron3/run-0000/all/default/inference_controller:
-    diffs: &id012
-      router_endpoints-0000: &id002
-        set:
-          <<: &id003
-            /args/sglang_model_routers: {default: {$tuple: [$HOST, $PORT]}}
-            /args/sglang_router_ip: $HOST
-            /args/sglang_router_port: $PORT
+    diffs: &id012 {router_endpoints-0000: &id002 {set: {<<: &id003 {/args/sglang_model_routers: {default: {$tuple: [$HOST,
+                  $PORT]}}, /args/sglang_router_ip: $HOST, /args/sglang_router_port: $PORT}}}}
     overrides:
       remove: &id005 [/args/backend, /args/trainer_actor_index, /args/trainer_role]
-      set:
-        <<:
-        - *id001
-        - &id006
-          /args/async_save: false
-          /args/ckpt_step: null
-          /args/distributed_backend: nccl
-          /args/distributed_timeout_minutes: 10
-          /args/eval_interval: null
-          /args/global_batch_size: 32
-          /args/load: null
-          /args/low_memory_resume: false
-          /args/micro_batch_size: 1
-          /args/num_layers: 52
-          /args/rollout_indexer_topk_num_streams: null
-          /args/save: null
-          /args/save_interval: null
-          /args/seed: 1234
-          /args/trainer_init_expected_num_cells: null
-          /args/wandb_project: null
+      set: {<<: [*id001, &id006 {/args/async_save: false, /args/ckpt_step: null, /args/distributed_backend: nccl, /args/distributed_timeout_minutes: 10,
+            /args/eval_interval: null, /args/global_batch_size: 32, /args/load: null, /args/low_memory_resume: false, /args/micro_batch_size: 1,
+            /args/num_layers: 52, /args/rollout_indexer_topk_num_streams: null, /args/save: null, /args/save_interval: null,
+            /args/seed: 1234, /args/trainer_init_expected_num_cells: null, /args/wandb_project: null}]}
     template: trainer-fsdp-02
   tests/e2e/sglang/test_session_server_multi_role/test_nemotron3/run-0000/all/default/main:
     diffs: &id007
@@ -86,61 +60,17 @@ processes:
         - *id001
         - *id006
         - &id008
-          /args/raw_fsdp:
-            adam_beta1: 0.9
-            adam_beta2: 0.95
-            adam_eps: 1.0e-08
-            attn_implementation: flash_attention_2
-            backend_name: fsdp
-            bf16: true
-            calculate_per_token_loss: false
-            ckpt_step: null
-            clip_grad: 1.0
-            config: null
-            context_parallel_size: 1
-            deterministic_mode: false
-            dp_replicate_size: 1
-            finetune: true
-            fp16: false
-            fsdp_cpu_backend: gloo
-            fsdp_cpu_offload: false
-            fsdp_state_dict_cpu_offload: true
-            gradient_checkpointing: false
-            keep_fp32_master: true
-            load: null
-            lr: 1.0e-06
-            lr_decay_iters: null
-            lr_decay_style: constant
-            lr_warmup_fraction: null
-            lr_warmup_init: 0.0
-            lr_warmup_iters: 0
-            lr_wsd_decay_iters: null
-            lr_wsd_decay_style: null
-            memory_snapshot_path: snapshot.pickle
-            min_lr: 0.0
-            mtp_loss_scaling_factor: 0.2
-            mtp_num_layers: null
-            no_load_optim: true
-            no_load_rng: true
-            no_save_optim: false
-            optimizer: adam
-            override_lr_scheduler: false
-            profile_step_end: 12
-            profile_step_start: 10
-            rank: 0
-            record_memory_history: false
-            tensorboard_dir: null
-            use_checkpoint_lr_scheduler: true
-            use_pytorch_profiler: false
-            wandb_project: null
-            wandb_run_name: null
-            warmup_ratio: 0.03
-            weight_decay: 0.0
-            world_size: 2
-          /args/raw_megatron:
-            base_args: {}
-            trainers:
-            - {actor_index: 0, model_id: null, overrides: {}, role: actor, trainer_id: actor}
+          /args/raw_fsdp: {adam_beta1: 0.9, adam_beta2: 0.95, adam_eps: 1.0e-08, attn_implementation: flash_attention_2, backend_name: fsdp,
+            bf16: true, calculate_per_token_loss: false, ckpt_step: null, clip_grad: 1.0, config: null, context_parallel_size: 1,
+            deterministic_mode: false, dp_replicate_size: 1, finetune: true, fp16: false, fsdp_cpu_backend: gloo, fsdp_cpu_offload: false,
+            fsdp_state_dict_cpu_offload: true, gradient_checkpointing: false, keep_fp32_master: true, load: null, lr: 1.0e-06,
+            lr_decay_iters: null, lr_decay_style: constant, lr_warmup_fraction: null, lr_warmup_init: 0.0, lr_warmup_iters: 0,
+            lr_wsd_decay_iters: null, lr_wsd_decay_style: null, memory_snapshot_path: snapshot.pickle, min_lr: 0.0, mtp_loss_scaling_factor: 0.2,
+            mtp_num_layers: null, no_load_optim: true, no_load_rng: true, no_save_optim: false, optimizer: adam, override_lr_scheduler: false,
+            profile_step_end: 12, profile_step_start: 10, rank: 0, record_memory_history: false, tensorboard_dir: null, use_checkpoint_lr_scheduler: true,
+            use_pytorch_profiler: false, wandb_project: null, wandb_run_name: null, warmup_ratio: 0.03, weight_decay: 0.0,
+            world_size: 2}
+          /args/raw_megatron: {base_args: {}, trainers: [{actor_index: 0, model_id: null, overrides: {}, role: actor, trainer_id: actor}]}
     template: trainer-fsdp-02
   tests/e2e/sglang/test_session_server_multi_role/test_nemotron3/run-0000/all/default/rollout_executor:
     diffs: *id007
@@ -166,9 +96,7 @@ processes:
           /args/custom_rollout_log_function_path: null
           /args/dynamic_sampling_filter_path: null
           /args/eval_datasets: []
-          /args/eval_function_path:
-            config: null
-            path: miles.rollout.inference_rollout.inference_rollout_common.InferenceRolloutFn
+          /args/eval_function_path: {config: null, path: miles.rollout.inference_rollout.inference_rollout_common.InferenceRolloutFn}
           /args/eval_max_prompt_len: null
           /args/eval_reward_key: null
           /args/group_rm: false
@@ -204,12 +132,7 @@ processes:
           /args/save_debug_rollout_data: null
     template: trainer-fsdp-02
   tests/e2e/sglang/test_session_server_multi_role/test_nemotron3/run-0000/all/default/trainer_controller_actor:
-    overrides:
-      set:
-        <<:
-        - *id009
-        - *id001
-        /args/backend/rank: 0
+    overrides: {set: {<<: [*id009, *id001], /args/backend/rank: 0}}
     template: trainer-fsdp-02
   tests/e2e/sglang/test_session_server_multi_role/test_nemotron3/run-0000/all/default/worker_manager:
     overrides:
@@ -237,18 +160,13 @@ processes:
     template: trainer-fsdp-02
   tests/e2e/sglang/test_session_server_multi_role/test_nemotron3/run-0001/all/default/actor_cell00000:
     <<: *id011
-    overrides:
-      set:
-        <<: *id009
-        /args/config_snapshot_name: tests/e2e/sglang/test_session_server_multi_role/test_nemotron3/run-0001
+    overrides: {set: {<<: *id009, /args/config_snapshot_name: tests/e2e/sglang/test_session_server_multi_role/test_nemotron3/run-0001}}
     template: trainer-fsdp-02
   tests/e2e/sglang/test_session_server_multi_role/test_nemotron3/run-0001/all/default/inference_controller:
     diffs: *id012
     overrides:
       remove: *id005
-      set:
-        <<: *id006
-        /args/config_snapshot_name: tests/e2e/sglang/test_session_server_multi_role/test_nemotron3/run-0001
+      set: {<<: *id006, /args/config_snapshot_name: tests/e2e/sglang/test_session_server_multi_role/test_nemotron3/run-0001}
     template: trainer-fsdp-02
   tests/e2e/sglang/test_session_server_multi_role/test_nemotron3/run-0001/all/default/main:
     diffs: *id007
@@ -272,11 +190,7 @@ processes:
         /args/config_snapshot_name: tests/e2e/sglang/test_session_server_multi_role/test_nemotron3/run-0001
     template: trainer-fsdp-02
   tests/e2e/sglang/test_session_server_multi_role/test_nemotron3/run-0001/all/default/trainer_controller_actor:
-    overrides:
-      set:
-        <<: *id009
-        /args/backend/rank: 0
-        /args/config_snapshot_name: tests/e2e/sglang/test_session_server_multi_role/test_nemotron3/run-0001
+    overrides: {set: {<<: *id009, /args/backend/rank: 0, /args/config_snapshot_name: tests/e2e/sglang/test_session_server_multi_role/test_nemotron3/run-0001}}
     template: trainer-fsdp-02
   tests/e2e/sglang/test_session_server_multi_role/test_nemotron3/run-0001/all/default/worker_manager:
     overrides:
@@ -292,25 +206,15 @@ processes:
   tests/e2e/sglang/test_session_server_multi_role/test_nemotron3/run-0002/all/default/actor_cell00000:
     <<: *id011
     overrides:
-      set:
-        <<:
-        - *id009
-        - &id014
-          /args/ci_enable_metrics_capture: false
-          /args/config_snapshot_name: tests/e2e/sglang/test_session_server_multi_role/test_nemotron3/run-0002
-          /args/custom_agent_function_path/path: miles.utils.test_utils.anthropic_session_verify_agent.run_agent
-          /args/custom_generate_function_path/config/anthropic_intermediate_system_expectation: required
-          /args/custom_generate_function_path/path: miles.utils.test_utils.anthropic_session_verify_agent.generate
-          /args/session_message_matcher: loose_tool_call
+      set: {<<: [*id009, &id014 {/args/ci_enable_metrics_capture: false, /args/config_snapshot_name: tests/e2e/sglang/test_session_server_multi_role/test_nemotron3/run-0002,
+            /args/custom_agent_function_path/path: miles.utils.test_utils.anthropic_session_verify_agent.run_agent, /args/custom_generate_function_path/config/anthropic_intermediate_system_expectation: required,
+            /args/custom_generate_function_path/path: miles.utils.test_utils.anthropic_session_verify_agent.generate, /args/session_message_matcher: loose_tool_call}]}
     template: trainer-fsdp-02
   tests/e2e/sglang/test_session_server_multi_role/test_nemotron3/run-0002/all/default/inference_controller:
     diffs: *id012
     overrides:
       remove: *id005
-      set:
-        <<:
-        - *id006
-        - *id014
+      set: {<<: [*id006, *id014]}
     template: trainer-fsdp-02
   tests/e2e/sglang/test_session_server_multi_role/test_nemotron3/run-0002/all/default/main:
     diffs: *id007
@@ -335,11 +239,7 @@ processes:
     template: trainer-fsdp-02
   tests/e2e/sglang/test_session_server_multi_role/test_nemotron3/run-0002/all/default/trainer_controller_actor:
     overrides:
-      set:
-        <<:
-        - *id009
-        - *id014
-        /args/backend/rank: 0
+      set: {<<: [*id009, *id014], /args/backend/rank: 0}
     template: trainer-fsdp-02
   tests/e2e/sglang/test_session_server_multi_role/test_nemotron3/run-0002/all/default/worker_manager:
     overrides:
@@ -366,9 +266,7 @@ shared_overrides:
       - model_path: null
         name: default
         server_groups:
-        - needs_offload: false
-          num_gpus_per_engine: 1
-          overrides: {model_path: /root/models/NVIDIA-Nemotron-3-Nano-30B-A3B-FP8}
-          worker_type: {$enum: miles.backends.sglang_utils.sglang_api_client.WorkerType, name: REGULAR}
+        - {needs_offload: false, num_gpus_per_engine: 1, overrides: {model_path: /root/models/NVIDIA-Nemotron-3-Nano-30B-A3B-FP8},
+          worker_type: {$enum: miles.backends.sglang_utils.sglang_api_client.WorkerType, name: REGULAR}}
         update_weights: true
       /args/tito_model: nemotron3

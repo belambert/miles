@@ -1,0 +1,25 @@
+base: megatron
+base_sha256: 110c6f03505a8623d99e4bb88e022a5fddaf9c30e20f980808cdcc9835375e63
+edits:
+- at: 17
+  delete: 0
+  insert: |
+    - --rollout-function-path
+    - tests.fast.argument_snapshot.argparser.scenarios._Hook
+- at: 1006
+  delete: 1
+  insert: |2
+        rollout_function_path: tests.fast.argument_snapshot.argparser.scenarios._Hook
+- at: 1687
+  delete: 0
+  insert: |2
+        snapshot_hook: 23
+- at: 14594
+  delete: 2
+  insert: |2
+                ''mistral'', ''nemotron_3'', ''granite_thinking_parser'', ''interns1'', ''gemma4'', ''gigachat35'', ''inkling'',
+                ''iquest_q1'', ''cohere_command4''].'
+- at: 18507
+  delete: 0
+  insert: |2
+          - {default: 23, dest: snapshot_hook, group: options, help: null, option_strings: [--snapshot-hook], type: {$callable: builtins.int}}

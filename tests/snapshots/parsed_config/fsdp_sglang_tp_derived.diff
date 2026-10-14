@@ -1,8 +1,0 @@
---- fsdp
-+++ fsdp_sglang_tp_derived
-@@ -376 +376 @@
--  rollout_num_gpus_per_engine: 1
-+  rollout_num_gpus_per_engine: 2
-@@ -998 +998 @@
--      tp_size: 1
-+      tp_size: 2
