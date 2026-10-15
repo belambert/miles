@@ -176,7 +176,7 @@ MODES: dict[str, FTTestMode] = {
         rollout_num_engines=4,
         rollout_gpus_per_engine=1,
         parallel_args="--context-parallel-size 2",
-        max_tokens_per_gpu=16384,
+        max_tokens_per_gpu=8192,
     ),
     # Same topology as kill_train__dp2_cp2__moe_5layer but a small real dense model (see README).
     "kill_train__dp2_cp2": FTTestMode(
