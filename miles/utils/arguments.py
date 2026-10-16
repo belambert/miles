@@ -1645,6 +1645,9 @@ def get_miles_extra_args_provider(add_custom_arguments=None):
                 help=(
                     "Path to the custom loss function, if the loss_type is `custom_loss`, "
                     "we will use this function to calculate the loss. "
+                    "Under context parallelism the returned loss must stay connected to `logits` on every rank, "
+                    "even one holding no response rows (build it from the hub's log-probs, which are), or that "
+                    "rank skips the model backward and the other ranks hang in its collectives."
                 ),
             )
             parser.add_argument(

@@ -15,7 +15,7 @@ import torch
 import torch.distributed as dist
 from torch import Tensor
 
-from miles.backends.training_utils.loss.hub.math_utils import vocabulary_size
+from miles.backends.training_utils.loss.hub.math_utils import true_vocab_size
 from miles.kernels.softmax import token_log_softmax as kernels
 
 
@@ -41,8 +41,7 @@ def fused_log_probs_and_entropy(
         raise ValueError(f"the fused log-prob op needs CUDA logits, got {logits.device}")
     assert logits.dim() == 2 and logits.stride(-1) == 1, f"need [N, V] logits, got {tuple(logits.shape)}"
     assert rows.shape == targets.shape, f"{tuple(rows.shape)} rows vs {tuple(targets.shape)} targets"
-    assert temperature > 0, f"temperature {temperature}: pass math_utils.logit_temperature of the sampling one"
-    _check_ids_in_vocabulary(targets, lowest=0, logits=logits, tp_group=tp_group, vocab_size=vocab_size)
+    assert temperature > 0, f"temperature {temperature}: resolve greedy (0) with math_utils.scaling_temperature"
     options = _FusedOptions(
         tp_group=tp_group,
         vocab=_vocab_range(logits, tp_group, vocab_size),
@@ -51,6 +50,7 @@ def fused_log_probs_and_entropy(
         entropy_requires_grad=with_entropy and entropy_requires_grad,
         inplace_backward=inplace_backward,
     )
+    _check_ids_in_vocabulary(targets, min_id=0, vocab=options.vocab)
     log_probs, entropy = _FusedLogProbsAndEntropy.apply(logits, rows.long(), targets.long(), options)
     return log_probs, (entropy if with_entropy else None)
 
@@ -139,22 +139,21 @@ def _combine_over_tp(shard: kernels.ShardStats, in_shard, tp_group, temperature)
     return kernels.ShardStats(global_logit_max, sums[:, 0], sum_exp_logit, sums[:, 1])
 
 
-def _check_ids_in_vocabulary(ids: Tensor, *, lowest: int, logits: Tensor, tp_group, vocab_size: int | None) -> None:
+def _check_ids_in_vocabulary(ids: Tensor, *, min_id: int, vocab: kernels.VocabRange) -> None:
     """No shard holds an id past the vocabulary, so it would score a plausible wrong value instead of failing."""
-    if not ids.numel():  # aminmax has no identity
+    if not ids.numel():  # a rank with no response rows has nothing to check, and aminmax no identity
         return
-    tp_size = dist.get_world_size(tp_group) if tp_group is not None else 1
-    n_ids = vocabulary_size(vocab_size, logits.size(1), tp_size)
     # the extremes, not a mask the size of ids; asserted on device, as a host check would sync the stream
     low, high = torch.aminmax(ids)
-    torch._assert_async((low >= lowest) & (high < n_ids), "fused log-prob token id outside the vocabulary")
+    torch._assert_async((low >= min_id) & (high < vocab.size), "fused log-prob token id outside the vocabulary")
 
 
 def _vocab_range(logits: Tensor, tp_group: dist.ProcessGroup | None, vocab_size: int | None) -> kernels.VocabRange:
     """This rank's shard of the vocabulary: Megatron splits the padded vocab into equal shards."""
-    start = dist.get_rank(tp_group) * logits.size(1) if tp_group is not None else 0
-    n_unpadded = logits.size(1) if vocab_size is None else min(max(vocab_size - start, 0), logits.size(1))
-    return kernels.VocabRange(start, n_unpadded)
+    tp_rank, tp_size = (dist.get_rank(tp_group), dist.get_world_size(tp_group)) if tp_group is not None else (0, 1)
+    start = tp_rank * logits.size(1)
+    size = true_vocab_size(vocab_size, logits.size(1), tp_size)
+    return kernels.VocabRange(start, min(max(size - start, 0), logits.size(1)), size)
 
 
 def _contiguous_or_none(tensor: Tensor | None) -> Tensor | None:
