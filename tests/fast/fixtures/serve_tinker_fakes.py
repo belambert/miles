@@ -69,7 +69,7 @@ async def tinker_startup(monkeypatch: pytest.MonkeyPatch) -> AsyncIterator[Simpl
     monkeypatch.setattr(serve_tinker, "compute_trainer_configs", lambda _: [actor_config])
     monkeypatch.setattr(serve_tinker, "create_trainer_handles", lambda _, **kwargs: {"actor": trainer})
     monkeypatch.setattr(serve_tinker.uvicorn, "Server", _Server)
-    monkeypatch.setattr(http_utils, "_http_client", None)
+    monkeypatch.setattr(http_utils, "_http_clients", {})
     monkeypatch.setattr(http_utils, "_client_concurrency", 0)
     monkeypatch.setattr(http_utils, "_distributed_post_enabled", False)
 
@@ -86,8 +86,8 @@ async def tinker_startup(monkeypatch: pytest.MonkeyPatch) -> AsyncIterator[Simpl
     try:
         yield SimpleNamespace(args=args, controller=controller, trainer=trainer, requests=requests)
     finally:
-        if http_utils._http_client is not None:
-            await http_utils._http_client.aclose()
+        for client in http_utils._http_clients.values():
+            await client.aclose()
 
 
 class _InferenceController:
