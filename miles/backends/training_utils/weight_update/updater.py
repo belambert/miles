@@ -7,29 +7,36 @@ LoRA adapter pushes.
 """
 
 import logging
+import random
 from argparse import Namespace
 from collections.abc import Callable, Mapping, Sequence
+from typing import TYPE_CHECKING
 
 import torch
 import torch.distributed as dist
-from ray.actor import ActorHandle
 from tqdm import tqdm
 
+from miles.backends.sglang_utils.sglang_api_client import SGLangApiClient
 from miles.backends.training_utils.parallel import ParallelState
+from miles.backends.training_utils.weight_update.conn_status import ConnStatusManager
 from miles.backends.training_utils.weight_update.protocol import get_weight_transfer_protocol
 from miles.backends.training_utils.weight_update.session import (
     begin_weight_update,
     end_weight_update,
-    pause_engines,
+    maybe_pause_engines,
+    maybe_resume_engines,
     register_lora_adapter,
-    resume_engines,
     set_weight_version,
+    weight_update_selector,
 )
 from miles.backends.training_utils.weight_update.utils import record_lora_checksums
+from miles.utils import async_utils
 from miles.utils.distributed_utils import get_gloo_group
-from miles.utils.lora import LORA_ADAPTER_NAME
-from miles.utils.multi_lora import is_multi_lora_enabled, slot_lora_name
+from miles.utils.lora.utils import LORA_ADAPTER_NAME
 from miles.utils.timer import timer
+
+if TYPE_CHECKING:
+    from miles.ray.rollout.inference_controller import UpdatableEngines
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +47,7 @@ class WeightUpdater:
         args: Namespace,
         model: Sequence[torch.nn.Module],
         *,
-        weights_getter: Callable[[], Mapping[str, torch.Tensor]],
+        weights_getter: Callable[[], Mapping[str, torch.Tensor] | None],
         model_name: str,
         quantization_config: dict | None,
         iterator_factory: Callable,
@@ -51,6 +58,7 @@ class WeightUpdater:
         self.args = args
         self.parallel_state = parallel_state
         self.protocol = get_weight_transfer_protocol(args)
+        self.conn_status = ConnStatusManager()
         assert (
             not is_lora or self.protocol.supports_lora
         ), f"LoRA weight sync is not supported for {args.update_weight_transfer_mode!r} weight transfer."
@@ -62,62 +70,71 @@ class WeightUpdater:
             quantization_config=quantization_config,
         )
         self.weights_getter = weights_getter
-        self.weight_version = 0
         self.is_lora = is_lora
         if is_lora:
             assert lora_sync_config is not None
         self._lora_sync_config = lora_sync_config
         self._registered_adapters: set[str] = set()
-        # Set by the actor before each update_weights call (loaded map at reconcile).
-        self.multi_lora_adapters = None
 
     def connect_rollout_engines(
         self,
-        rollout_engines: Sequence[ActorHandle],
-        rollout_engine_lock: ActorHandle | None,
+        rollout_engines: Sequence[SGLangApiClient],
         engine_gpu_counts: Sequence[int] | None = None,
         engine_gpu_offsets: Sequence[int] | None = None,
     ) -> None:
         self.protocol.connect(
             rollout_engines,
-            rollout_engine_lock,
             engine_gpu_counts,
             engine_gpu_offsets,
             self.parallel_state,
             self._hf_weight_iterator.placement,
-            self._hf_weight_iterator.weight_update_selector,
+            weight_update_selector(self.args),
         )
         assert self.protocol.is_sender is not None, "connect() must set is_sender"
         self._registered_adapters.clear()
 
-    def is_rollout_engines_fresh(self) -> bool:
-        return self.protocol.is_fresh()
+    def reconnect_if_needed(self, info: "UpdatableEngines") -> bool:
+        if not self.conn_status.needs_reconnect(info.snapshot_cell_id_to_hashes):
+            return False
+        self.reconnect(info)
+        return True
 
-    def mark_engine_connection_stale(self) -> None:
-        self.protocol.mark_stale()
+    def reconnect(self, info: "UpdatableEngines") -> None:
+        self.connect_rollout_engines(
+            info.rollout_engines,
+            engine_gpu_counts=info.engine_gpu_counts,
+            engine_gpu_offsets=info.engine_gpu_offsets,
+        )
+        self.conn_status.mark_reconnected(info.snapshot_cell_id_to_hashes)
+        dist.barrier(group=get_gloo_group())
+
+    def verify_engine_version(self, rollout_engines: Sequence[SGLangApiClient], *, weight_version: int) -> None:
+        if not rollout_engines:
+            return
+        engine = random.choice(list(rollout_engines))
+        engine_version = async_utils.run(engine.get_weight_version())
+        if str(engine_version) != str(weight_version):
+            raise RuntimeError(f"Weight version mismatch! Engine: {engine_version}, Updater: {weight_version}")
 
     def pop_metrics(self) -> dict[str, float]:
         """Return and clear the protocol's metrics; the actor drains them onto the step log."""
         return self.protocol.pop_metrics()
 
     @torch.no_grad()
-    def update_weights(self) -> None:
+    def update_weights(self, weight_version: int) -> bool:
         """Run one weight sync: session frame + base-bucket stream + adapter pushes for LoRA."""
         protocol = self.protocol
-        if not protocol.begin_sync(self.weight_version + 1, self._iter_base_buckets):
-            return
-        self.weight_version += 1
+        if not protocol.begin_sync(weight_version, self._iter_base_buckets):
+            return False
 
         sync_base = not self.is_lora or protocol.needs_base_resync_for_lora
         adapters = self._get_updated_adapters()
 
         driver = dist.get_rank() == 0
         if protocol.use_weight_update_session and driver:
-            pause_engines(self.args, protocol.rollout_engines)
+            maybe_pause_engines(self.args, protocol.rollout_engines)
             self._register_new_lora_adapters(protocol.rollout_engines, adapters)
-            begin_weight_update(
-                protocol.rollout_engines, self._hf_weight_iterator.weight_update_selector, sync_base=sync_base
-            )
+            begin_weight_update(protocol.rollout_engines, weight_update_selector(self.args), sync_base=sync_base)
         dist.barrier(group=get_gloo_group())
 
         checksums = {name: {} for name, _ in adapters} if self.is_lora and self.args.check_lora_weight_equal else None
@@ -142,12 +159,14 @@ class WeightUpdater:
             dist.barrier(group=get_gloo_group())
 
         with timer("finalize_and_resume_engines"):
-            protocol.finalize(self.weight_version)
+            protocol.finalize(weight_version)
             if protocol.use_weight_update_session and driver:
                 end_weight_update(protocol.rollout_engines, expected_lora_checksums=checksums)
-                set_weight_version(protocol.rollout_engines, self.weight_version)
-                resume_engines(protocol.rollout_engines)
+                set_weight_version(protocol.rollout_engines, weight_version)
+                maybe_resume_engines(self.args, protocol.rollout_engines)
             dist.barrier(group=get_gloo_group())
+        protocol.after_engines_resumed()
+        return True
 
     def _iter_base_buckets(self, *, materialize: bool):
         return self._hf_weight_iterator.iter_hf_weights(self.weights_getter(), materialize=materialize)
@@ -157,10 +176,6 @@ class WeightUpdater:
         identical on every rank so the iterator's collectives align."""
         if not self.is_lora:
             return []
-        if is_multi_lora_enabled(self.args):
-            adapters = self.multi_lora_adapters
-            assert adapters is not None, "actor must set multi_lora_adapters before update_weights"
-            return [(slot_lora_name(adapters[name].slot), adapters[name]) for name in sorted(adapters)]
         return [(LORA_ADAPTER_NAME, None)]
 
     def _register_new_lora_adapters(self, rollout_engines, adapters: list[tuple[str, object]]) -> None:
@@ -171,6 +186,6 @@ class WeightUpdater:
                 continue
             config = self._lora_sync_config
             if adapter is not None:
-                config = config | {"r": adapter.config.rank, "lora_alpha": adapter.config.alpha}
+                config = config | {"r": adapter.rank, "lora_alpha": adapter.alpha}
             register_lora_adapter(rollout_engines, lora_name=lora_name, lora_config=config)
             self._registered_adapters.add(lora_name)

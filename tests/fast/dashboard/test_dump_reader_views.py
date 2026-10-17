@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 import statistics
 import time
 
@@ -7,7 +8,8 @@ import polars as pl
 import pytest
 from tests.fast.dashboard.dummy_dump import blank_samples, dump_dummy_run
 
-from miles.dashboard.dump_reader import DumpReader
+from miles.dashboard.dump_reader import DumpReader, _weight_version_summary
+from miles.utils.types import Sample, WeightVersionSpan, WeightVersionsPerCall
 
 REMOVED = (3,)  # within-step positions marked remove_sample=True by the fixture
 
@@ -47,6 +49,14 @@ def test_summary_matches_hand_computed(reader):
                 float((row.log_probs - row.rollout_log_probs).exp()[mask].mean()), rel=1e-5
             )
             assert entry["mean_entropy"] == pytest.approx(float(row.entropy[mask].mean()), rel=1e-5)
+
+
+def test_summary_uses_speculative_counters(reader):
+    sample = Sample(spec_info=Sample.SpecInfo(spec_num_correct_drafts=1, spec_num_proposed_drafts=4))
+
+    entry = reader._summary_row(sample, None, rollout_id=0, sample_occurrence=0)
+
+    assert entry["spec_accept_rate"] == 0.25
 
 
 def test_summary_removed_sample_has_no_masked_stats(reader):
@@ -213,7 +223,6 @@ def test_summary_and_tokens_survive_dump_without_log_probs(tmp_path):
     derived from them degrades to None instead of KeyError -> HTTP 404
     (disagg report 2026-07-14)."""
     import torch
-
     from tests.fast.dashboard.dummy_dump import dump_dummy_run
 
     from miles.dashboard.dump_reader import DumpReader
@@ -357,3 +366,244 @@ def test_pre_fix_columnless_cache_is_not_served(tmp_path):
 
     assert reader.summary(1).columns == list(DumpReader.SUMMARY_COLUMNS)
     assert DumpReader.SUMMARY_VERSION > 4  # regressing the bump re-serves those caches
+
+
+def test_turns_counts_calls_not_spans():
+    """A single generation call that spanned a weight update is still one turn."""
+    from miles.dashboard.dump_reader import _weight_version_summary
+    from miles.utils.types import Sample, WeightVersionSpan, WeightVersionsPerCall
+
+    sample = Sample(group_index=0, index=0, prompt="p", tokens=[1, 2, 3], response="r", response_length=3, label="l")
+    sample.weight_versions = [
+        WeightVersionsPerCall(spans=[WeightVersionSpan("4", 0, 2), WeightVersionSpan("5", 2, 3)])
+    ]
+
+    assert _weight_version_summary(sample) == (["4", "5"], 1)
+
+
+def test_turns_counts_a_call_that_carried_no_version():
+    """An unstamped call still happened, so it must not vanish from the turn count."""
+    from miles.dashboard.dump_reader import _weight_version_summary
+    from miles.utils.types import Sample, WeightVersionSpan, WeightVersionsPerCall
+
+    sample = Sample(group_index=0, index=0, prompt="p", tokens=[1, 2], response="r", response_length=2, label="l")
+    sample.weight_versions = [
+        WeightVersionsPerCall(spans=[WeightVersionSpan("4", 0, 1)]),
+        WeightVersionsPerCall(spans=[]),
+    ]
+
+    assert _weight_version_summary(sample) == (["4"], 2)
+
+
+class TestLegacyWeightVersionSummary:
+    def test_reads_versions_from_a_pre_span_dump(self):
+        """A dump that predates spans still reports its versions and turn count."""
+        sample = Sample.from_dict({"status": "completed", "weight_versions": ["3", "4"], "tokens": [1, 2]})
+
+        versions, turns = _weight_version_summary(sample)
+
+        assert versions == ["3", "4"]
+        assert turns == 2
+
+    def test_prefers_spans_when_the_dump_has_them(self):
+        """A current dump is read from its spans, in generation order."""
+        sample = Sample(
+            weight_versions=[
+                WeightVersionsPerCall(spans=[WeightVersionSpan("3", 0, 1)]),
+                WeightVersionsPerCall(spans=[WeightVersionSpan("4", 1, 2), WeightVersionSpan("5", 2, 3)]),
+            ]
+        )
+
+        versions, turns = _weight_version_summary(sample)
+
+        assert versions == ["3", "4", "5"]
+        assert turns == 2
+
+    def test_reports_nothing_when_the_sample_was_never_stamped(self):
+        """A sample with no versions at all yields no series rather than a zero."""
+        assert _weight_version_summary(Sample()) == ([], None)
+
+    def test_repeated_legacy_versions_are_two_turns_but_not_mixed(self):
+        """Two calls that happened to see the same weights are still two turns."""
+        sample = Sample.from_dict({"status": "completed", "weight_versions": ["3", "3"], "tokens": [1, 2]})
+
+        assert _weight_version_summary(sample) == (["3", "3"], 2)
+
+
+class TestCurrentFormatWeightVersionSummary:
+    def test_turns_counts_calls_when_every_call_is_unstamped(self):
+        """Two calls that the engine never stamped report no versions but still count as two turns."""
+        sample = Sample(weight_versions=[WeightVersionsPerCall(spans=[]), WeightVersionsPerCall(spans=[])])
+
+        assert _weight_version_summary(sample) == ([], 2)
+
+    def test_summary_does_not_mark_repeated_current_version_as_mixed(self, tmp_path):
+        """Two calls that saw the same weights give two turns without flagging a mixed version."""
+        sample = Sample(
+            group_index=0,
+            index=0,
+            tokens=[1, 2],
+            response_length=2,
+            weight_versions=[
+                WeightVersionsPerCall(spans=[WeightVersionSpan("3", 0, 1)]),
+                WeightVersionsPerCall(spans=[WeightVersionSpan("3", 1, 2)]),
+            ],
+        )
+
+        row = DumpReader(tmp_path)._summary_row(sample, None, rollout_id=0, sample_occurrence=0)
+
+        assert row["turns"] == 2
+        assert row["mixed_version"] is False
+        assert row["weight_version"] == "3"
+
+
+class TestPrefillSummaryColumns:
+    def test_prefill_columns_report_the_oldest_prompt_version_and_the_largest_per_call_lag(self, tmp_path):
+        """The summary exposes the oldest prompt KV version and the worst lag any single call experienced."""
+        sample = Sample(
+            group_index=0,
+            index=0,
+            tokens=[1, 2, 3, 4],
+            response_length=2,
+            weight_versions=[
+                WeightVersionsPerCall(
+                    spans=[WeightVersionSpan("5", 2, 3)],
+                    prefill_spans=[WeightVersionSpan("1", 0, 1), WeightVersionSpan("5", 1, 2)],
+                    output_start=2,
+                ),
+                WeightVersionsPerCall(
+                    spans=[WeightVersionSpan("6", 3, 4)], prefill_spans=[WeightVersionSpan("5", 0, 3)], output_start=3
+                ),
+            ],
+        )
+        sample.validate()
+
+        row = DumpReader(tmp_path)._summary_row(sample, None, rollout_id=6, sample_occurrence=0)
+
+        assert row["weight_version"] == "6"
+        assert row["prefill_weight_version_min"] == 1
+        assert row["prefill_lag"] == 4
+
+    def test_prefill_lag_never_pairs_the_prompt_of_one_call_with_the_decode_of_another(self, tmp_path):
+        """A prompt recomputed under fresh weights must not inherit the lag of an earlier call."""
+        sample = Sample(
+            group_index=0,
+            index=0,
+            tokens=[1, 2, 3, 4],
+            response_length=2,
+            weight_versions=[
+                WeightVersionsPerCall(
+                    spans=[WeightVersionSpan("2", 2, 3)], prefill_spans=[WeightVersionSpan("1", 0, 2)], output_start=2
+                ),
+                WeightVersionsPerCall(
+                    spans=[WeightVersionSpan("100", 3, 4)],
+                    prefill_spans=[WeightVersionSpan("100", 0, 3)],
+                    output_start=3,
+                ),
+            ],
+        )
+        sample.validate()
+
+        row = DumpReader(tmp_path)._summary_row(sample, None, rollout_id=100, sample_occurrence=0)
+
+        assert row["prefill_weight_version_min"] == 1
+        assert row["prefill_lag"] == 1
+
+    def test_prefill_columns_are_null_without_prefill_spans(self, tmp_path):
+        """A dump from an engine without prefill weight versions leaves both columns empty."""
+        sample = Sample(
+            group_index=0,
+            index=0,
+            tokens=[1, 2],
+            response_length=1,
+            weight_versions=[WeightVersionsPerCall(spans=[WeightVersionSpan("3", 1, 2)], output_start=1)],
+        )
+        sample.validate()
+
+        row = DumpReader(tmp_path)._summary_row(sample, None, rollout_id=3, sample_occurrence=0)
+
+        assert row["prefill_weight_version_min"] is None
+        assert row["prefill_lag"] is None
+
+    def test_prefill_lag_is_null_when_no_call_has_a_numeric_decode_version(self, tmp_path):
+        """A call whose decode version is a placeholder is not comparable, while the minimum is still reported."""
+        sample = Sample(
+            group_index=0,
+            index=0,
+            tokens=[1, 2],
+            response_length=1,
+            weight_versions=[
+                WeightVersionsPerCall(
+                    spans=[WeightVersionSpan("mock", 1, 2)],
+                    prefill_spans=[WeightVersionSpan("2", 0, 1)],
+                    output_start=1,
+                )
+            ],
+        )
+        sample.validate()
+
+        row = DumpReader(tmp_path)._summary_row(sample, None, rollout_id=3, sample_occurrence=0)
+
+        assert row["prefill_weight_version_min"] == 2
+        assert row["prefill_lag"] is None
+
+    def test_summary_columns_include_the_prefill_columns(self):
+        """The declared column order carries the prefill columns so an empty step keeps the same schema."""
+        assert "prefill_weight_version_min" in DumpReader.SUMMARY_COLUMNS
+        assert "prefill_lag" in DumpReader.SUMMARY_COLUMNS
+
+
+class TestSummaryCacheVersioning:
+    def test_summary_invalidates_v2_cache_after_weight_version_schema_change(self, reader):
+        """A summary cache stamped with the previous schema version is rebuilt and restamped at version 5."""
+        import polars as pl
+
+        expected = reader.summary(0)
+        cache_path = reader.cache_dir / "rollout_0.parquet"
+        sources_path = reader.cache_dir / "rollout_0.sources.json"
+        pl.DataFrame({"sample_index": [-1]}).write_parquet(cache_path)
+        sources_path.write_text(json.dumps(json.loads(sources_path.read_text()) | {"_summary_version": 2}))
+
+        rebuilt = reader.summary(0)
+
+        assert rebuilt.equals(expected)
+        assert pl.read_parquet(cache_path).equals(expected)
+        assert json.loads(sources_path.read_text())["_summary_version"] == 9
+
+    def test_summary_invalidates_a_v8_cache_whose_prefill_lag_paired_calls(self, reader):
+        """A v8 cache computed prefill_lag across calls, so it must be rebuilt rather than served."""
+        import polars as pl
+
+        expected = reader.summary(0)
+        cache_path = reader.cache_dir / "rollout_0.parquet"
+        sources_path = reader.cache_dir / "rollout_0.sources.json"
+        pl.DataFrame({"sample_index": [-1]}).write_parquet(cache_path)
+        sources_path.write_text(json.dumps(json.loads(sources_path.read_text()) | {"_summary_version": 8}))
+
+        rebuilt = reader.summary(0)
+
+        assert rebuilt.equals(expected)
+        assert json.loads(sources_path.read_text())["_summary_version"] == 9
+
+
+def test_pre_span_dump_survives_the_full_reader_pipeline(tmp_path):
+    """A real dump downgraded to the pre-span format still rebuilds its parquet and summarises."""
+    import polars as pl
+    import torch
+
+    dump_dummy_run(tmp_path, steps=1, dp_size=2, tp_dup=2, with_eval=False)
+    shutil.rmtree(tmp_path / "dashboard_columns")
+    for path in (tmp_path / "rollout_data").glob("*.pt"):
+        pack = torch.load(path, weights_only=False)
+        for data in pack["samples"]:
+            data["weight_versions"] = [span["version"] for call in data["weight_versions"] for span in call["spans"]]
+        torch.save(pack, path)
+
+    reader = DumpReader(tmp_path)
+    df = reader.summary(0)
+
+    assert df.height > 0
+    agentic = df.filter(pl.col("sample_index") % 3 == 0)
+    assert agentic["turns"].min() == 2
+    assert agentic["mixed_version"].all()
+    assert reader.tokens(0, int(agentic["sample_index"][0]))

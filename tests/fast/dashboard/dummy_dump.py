@@ -36,14 +36,14 @@ from pathlib import Path
 
 import torch
 
+from miles.backends.training_utils.metrics.train_dump import save_debug_train_data_for_rank
 from miles.ray.rollout.debug_data import save_dashboard_columns, save_debug_rollout_data
 from miles.ray.rollout.train_data_conversion import (
     convert_samples_to_train_data,
     process_rollout_data_shard,
     split_train_data_by_dp_raw,
 )
-from miles.utils.train_dump_utils import save_debug_train_data_for_rank
-from miles.utils.types import Sample
+from miles.utils.types import Sample, WeightVersionSpan, WeightVersionsPerCall
 
 
 @dataclass
@@ -161,6 +161,8 @@ def _make_args(dump_dir: Path, *, num_prompts: int, n_samples_per_prompt: int) -
         n_samples_per_prompt=n_samples_per_prompt,
         reward_key=None,
         qkv_format="thd",
+        rollout_top_logprobs_num=0,
+        enable_sample_ownership_checker=False,
     )
 
 
@@ -173,7 +175,15 @@ def _make_sample(
     # every third sample is agentic-shaped: multi-turn (mixed weight versions
     # under fully async) with a chat prompt carrying tool messages
     agentic = index % 3 == 0
-    versions = [str(index % 3), str(index % 3 + 1)] if agentic else [str(index % 3)]
+    total_length = prompt_length + response_length
+    if agentic:
+        split = prompt_length + response_length // 2
+        versions = [
+            WeightVersionsPerCall(spans=[WeightVersionSpan(str(index % 3), prompt_length, split)]),
+            WeightVersionsPerCall(spans=[WeightVersionSpan(str(index % 3 + 1), split, total_length)]),
+        ]
+    else:
+        versions = [WeightVersionsPerCall(spans=[WeightVersionSpan(str(index % 3), prompt_length, total_length)])]
     prompt: str | list = "What is 1+1?"
     if agentic:
         prompt = [

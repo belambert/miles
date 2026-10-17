@@ -5,15 +5,15 @@ from scripts.run_glm5_3_flash import _MODEL_REGISTRY, ScriptArgs, _train
 from tests.ci.ci_register import register_cuda_ci
 from tests.ci.metric_history import register_ci_gate
 
-import miles.utils.external_utils.command_utils as U
-
 
 register_cuda_ci(
     est_time=1800,
     suite="stage-c-8-gpu-h200",
     labels=["megatron", "model-scripts"],
+    hardware=["hopper", "blackwell"],
     disabled="needs a CI image with GLM-5.3-Flash sglang support (branch sglang-miles-glm53); "
     "re-enable once it lands.",
+    num_gpus=8,
 )
 
 register_ci_gate(metric_key="train/grad_norm")
@@ -26,21 +26,21 @@ _MODEL_ORG = "CharyZeng"
 
 
 def _args() -> ScriptArgs:
-    return ScriptArgs(
+    return ScriptArgs.from_env(
         model_name="GLM-5.3-Flash-4layer",
+        ckpt_dir="/root/models",
         num_nodes=1,
         num_gpus_per_node=8,
         num_rollout=5,
         rollout_max_response_len=512,
         enable_r3=True,
         skip_saving=True,
-        extra_args=(
-            "--ci-test " "--ci-disable-kl-checker " "--ci-disable-logprobs-checker " "--offload-train-target cpu "
-        ),
+        extra_args="--ci-test --ci-disable-kl-checker --ci-disable-logprobs-checker --offload-train-target cpu ",
     )
 
 
 def prepare(args: ScriptArgs):
+    U = args.create_backend()
     os.environ["CONVERT_KEEP_PP1"] = "1"
     os.environ["CUDA_DEVICE_MAX_CONNECTIONS"] = "1"
     U.exec_command_cpu(f"mkdir -p {args.model_dir} {args.ckpt_dir} {args.data_dir}")

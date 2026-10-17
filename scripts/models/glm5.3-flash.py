@@ -1,9 +1,7 @@
 from model_args_utils import moe_layer_freq
 
-FIRST_K_DENSE_REPLACE = 3
 
-
-def model_args(nlayers: int = 45, first_k_dense_replace: int = FIRST_K_DENSE_REPLACE) -> str:
+def model_args(nlayers: int = 45, first_k_dense_replace: int = 3) -> str:
     return (
         "--spec miles_plugins.models.glm5_next.glm5_next get_glm5_next_spec "
         f"--num-layers {nlayers} "
@@ -39,6 +37,8 @@ def model_args(nlayers: int = 45, first_k_dense_replace: int = FIRST_K_DENSE_REP
         "--normalization RMSNorm "
         "--norm-epsilon 1e-5 "
         "--swiglu "
+        # the checkpoint sets swiglu_limit=10, which sglang applies to dense, shared and routed MLPs
+        "--activation-func-clamp-value 10 "
         "--disable-bias-linear "
         "--untie-embeddings-and-output-weights "
         "--make-vocab-size-divisible-by 16 "

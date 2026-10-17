@@ -6,6 +6,8 @@ same commit/skip decisions — clients only ever see Anthropic wire shapes.
 """
 
 import json
+import subprocess
+import sys
 import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
@@ -18,6 +20,7 @@ import requests
 from fastapi.responses import JSONResponse
 from sglang.srt.entrypoints.anthropic.protocol import AnthropicMessagesRequest
 from sglang.srt.entrypoints.anthropic.serving import convert_to_chat_completion_request
+from tests.fast.fixtures.session_fixtures import make_session_server_config
 
 import miles.rollout.session.core as core_module
 import miles.rollout.session.v2.core as v2_core_module
@@ -49,19 +52,16 @@ def _anthropic_env(extra_args: dict | None = None, *, latency: float = 0.0):
     # The mock backend already emits choice.meta_info with
     # output_token_logprobs/completion_tokens in the session-server format.
     with with_mock_server(process_fn=_process_fn, latency=latency) as backend:
-        args = SimpleNamespace(
-            miles_router_timeout=30,
+        config = make_session_server_config(
+            backend_url=backend.url,
+            timeout=30,
             hf_checkpoint="Qwen/Qwen3-0.6B",
-            chat_template_path=None,
             apply_chat_template_kwargs={"enable_thinking": False},
             tito_model="default",
-            sglang_speculative_algorithm=None,
-            trajectory_manager="linear_trajectory",
-            session_server_instance_id=uuid.uuid4().hex,
-            save_debug_trajectory_data=None,
+            instance_id=uuid.uuid4().hex,
             **({"pause_generation_mode": "retract"} | (extra_args or {})),
         )
-        server_obj = SessionServer(args, backend_url=backend.url)
+        server_obj = SessionServer(config)
         port = find_available_port(31000)
         server = UvicornThreadServer(server_obj.app, host="127.0.0.1", port=port)
         server.start()
@@ -73,7 +73,7 @@ def _anthropic_env(extra_args: dict | None = None, *, latency: float = 0.0):
 
 _V2_ARGS = {
     "use_session_server": "v2",
-    "session_sample_picker_path": "miles.rollout.session.v2.picker_hub.drop_retries",
+    "session_sample_picker_path": "miles.rollout.session.v2.picker_hub.drop_same_prompt_retries",
     "session_sample_postprocessor_path": "miles.rollout.session.v2.postprocessor_hub.default_postprocess",
 }
 
@@ -91,8 +91,9 @@ def anthropic_env_loose(request):
         yield SimpleNamespace(version=request.param, **vars(env))
 
 
-def _create_session(url: str) -> str:
-    return requests.post(f"{url}/sessions", timeout=5.0).json()["session_id"]
+def _create_session(url: str, *, extra_key: str | None = None) -> str:
+    body = {} if extra_key is None else {"extra_key": extra_key}
+    return requests.post(url=f"{url}/sessions", json=body, timeout=5.0).json()["session_id"]
 
 
 def _post_messages(url: str, session_id: str, payload: dict) -> requests.Response:
@@ -118,7 +119,50 @@ def _parse_sse(body: str) -> list[tuple[str, dict]]:
     return events
 
 
+@pytest.mark.parametrize(
+    "missing_module",
+    [
+        "sglang.srt.entrypoints.anthropic",
+        "sglang.srt.entrypoints.anthropic.utils",
+        "sglang.srt.entrypoints.anthropic.serving",
+        "sglang.srt.entrypoints.anthropic.protocol",
+    ],
+)
+def test_sessions_module_imports_without_optional_sglang_anthropic_helpers(missing_module: str) -> None:
+    script = (
+        "import sys\n"
+        f"missing = {missing_module!r}\n"
+        "sys.modules[missing] = None\n"
+        "from miles.rollout.session import anthropic_adapter, sessions\n"
+        "if missing.endswith(('.utils', 'anthropic')):\n"
+        "    assert sessions.anthropic_utils is None\n"
+        "if missing.endswith(('.serving', 'anthropic')):\n"
+        "    assert sessions.convert_response is None\n"
+        "    assert sessions.convert_to_chat_completion_request is None\n"
+        "if missing.endswith(('.protocol', 'anthropic')):\n"
+        "    assert anthropic_adapter.anthropic_adapter_available() is False\n"
+    )
+    result = subprocess.run([sys.executable, "-c", script], capture_output=True, text=True, check=False)
+
+    assert result.returncode == 0, result.stderr
+
+
 class TestAnthropicRoute:
+    def test_unavailable_sglang_adapter_returns_501_without_record(self, anthropic_env):
+        session_id = _create_session(anthropic_env.url)
+        with patch.object(sessions_module, "anthropic_utils", None):
+            resp = _post_messages(anthropic_env.url, session_id, _payload([{"role": "user", "content": "hello"}]))
+
+        assert resp.status_code == 501
+        assert resp.json() == {
+            "type": "error",
+            "error": {
+                "type": "api_error",
+                "message": "The installed SGLang does not support the Anthropic Messages adapter",
+            },
+        }
+        assert _records(anthropic_env.url, session_id) == []
+
     def test_health_reports_live_intermediate_system_capability(self, anthropic_env):
         body = requests.get(f"{anthropic_env.url}/health", timeout=5.0).json()
         assert body["anthropic_intermediate_system_supported"] is True
@@ -839,6 +883,36 @@ def _tool_turn2_payload(tool_use: dict) -> dict:
 
 
 class TestAnthropicToolFlow:
+    def test_keyed_multi_turn_messages_override_every_client_key(self, anthropic_env: SimpleNamespace) -> None:
+        """Every Anthropic turn of a v2 session forwards the session key instead of the client's key."""
+        if anthropic_env.version == "v1":
+            pytest.skip("session server v1 does not support the KV cache namespace")
+
+        key = "train:-:7"
+        session_id = _create_session(url=anthropic_env.url, extra_key=key)
+        request_start = len(anthropic_env.backend.request_log)
+        messages = [{"role": "user", "content": "hello"}]
+
+        for client_key in ("client-key", "another-client-key"):
+            response = _post_messages(
+                url=anthropic_env.url,
+                session_id=session_id,
+                payload=_payload(messages=messages, extra_key=client_key),
+            )
+            assert response.status_code == 200
+            assert response.json()["content"] == [{"type": "text", "text": "anthropic-echo"}]
+            messages = [
+                *messages,
+                {"role": "assistant", "content": response.json()["content"]},
+                {"role": "user", "content": "continue"},
+            ]
+
+        records = _records(url=anthropic_env.url, session_id=session_id)
+        assert len(records) == 2
+        first_ids = records[0]["request"]["input_ids"]
+        assert records[1]["request"]["input_ids"][: len(first_ids)] == first_ids
+        assert [body["extra_key"] for body in anthropic_env.backend.request_log[request_start:]] == [key] * 2
+
     def test_multi_turn_tool_flow_reuses_stored_prefix(self, anthropic_env_loose):
         url = anthropic_env_loose.url
         session_id = _create_session(url)
