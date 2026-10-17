@@ -50,11 +50,10 @@ class TestCheckpointLoadInputs:
             str(tmp_path / "missing"),
             "--ref-load",
             "reference",
-            "--hf-checkpoint",
-            "hf",
             "--ref-ckpt-step",
             "7",
         )
+        args = args.model_copy(update={"hf_checkpoint": "hf"})
         original = args.model_dump()
         [trainer] = args.raw_megatron.trainers
         request = compute_trainer_ckpt_load_config(args, trainer)

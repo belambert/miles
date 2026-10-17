@@ -90,6 +90,7 @@ def _make_mock_args(
         ci_disable_config_snapshot=False,
         save_debug_event_data=None,
         enable_event_analyzer=False,
+        enable_sample_ownership_checker=False,
         object_store_backend="ray",
         worker_comm_backend="ray",
         trainer_model_id=None,
