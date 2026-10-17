@@ -44,6 +44,7 @@ class SandboxRow:
     provider: str | None = None
     sandbox_id: str | None = None
     last_error: str | None = None
+    finished: bool = False
 
 
 class SandboxHealth:
@@ -69,7 +70,11 @@ class SandboxHealth:
             row.last_error = report.error
         # reports relayed from a subproc agent call can arrive late; an older one only fills labels
         if report.ts >= row.last_exec_ts:
-            row.status, row.last_exec_ts = report.status, report.ts
+            row.last_exec_ts = report.ts
+            row.finished = report.status == "finished"
+            # a failed sandbox is torn down right after its error; keep it counted as an error
+            if not (row.finished and row.status == "error"):
+                row.status = report.status
         row.first_seen_ts = min(row.first_seen_ts, report.ts)
         self._dirty = True
         if len(self.rows) > self.max_rows:
@@ -77,21 +82,21 @@ class SandboxHealth:
 
     def _evict(self, *, now: float) -> None:
         for key, row in list(self.rows.items()):
-            if row.status == "finished" and now - row.last_exec_ts > self.finished_ttl_s:
+            if row.finished and now - row.last_exec_ts > self.finished_ttl_s:
                 del self.rows[key]
                 self._dirty = True
         excess = len(self.rows) - self.max_rows
         if excess > 0:
             # finished rows go first, then the longest-silent ones
-            by_priority = sorted(self.rows.values(), key=lambda r: (r.status != "finished", r.last_exec_ts))
+            by_priority = sorted(self.rows.values(), key=lambda r: (not r.finished, r.last_exec_ts))
             for row in by_priority[:excess]:
                 del self.rows[row.sandbox_key]
             self._dirty = True
 
     def write_snapshot(self, *, now: float) -> None:
-        """Atomically overwrite the snapshot file, if anything changed since the last write."""
+        """Atomically overwrite the snapshot file; its ``ts`` is when the run was last seen alive."""
         self._evict(now=now)
-        if not self._dirty:
+        if not (self._dirty or self.rows):
             return
         self.path.parent.mkdir(parents=True, exist_ok=True)
         tmp = self.path.with_name(self.path.name + ".tmp")

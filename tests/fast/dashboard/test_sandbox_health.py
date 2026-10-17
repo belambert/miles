@@ -81,8 +81,11 @@ def test_subproc_reports_reach_the_callers_collector(handle: _FakeHandle):
     ]
 
 
-def test_a_hung_subproc_call_reports_before_it_returns(handle: _FakeHandle):
-    """A sandbox stuck in setup must show up while its call still runs, not only once it returns."""
+def test_a_hung_subproc_call_reports_before_it_returns_and_its_cancel_teardown(handle: _FakeHandle):
+    """A sandbox stuck in setup must show up while its call runs, and its teardown after a cancel must arrive."""
+
+    def reports() -> list[SandboxReport]:
+        return [report for (batch,) in handle.push_sandbox_reports.calls for report in batch]
 
     async def run() -> None:
         call = asyncio.create_task(
@@ -94,16 +97,20 @@ def test_a_hung_subproc_call_reports_before_it_returns(handle: _FakeHandle):
             )
         )
         for _ in range(300):
-            if handle.push_sandbox_reports.calls:
+            if reports():
                 break
             await asyncio.sleep(0.05)
+        assert [r.status for r in reports()] == ["healthy"]
         call.cancel()
         with pytest.raises(asyncio.CancelledError):
             await call
+        for _ in range(300):
+            if len(reports()) == 2:
+                break
+            await asyncio.sleep(0.05)
 
     asyncio.run(run())
-    [([report],)] = handle.push_sandbox_reports.calls
-    assert (report.sandbox_key, report.provider) == ("stuck", "local")
+    assert [(r.sandbox_key, r.status) for r in reports()] == [("stuck", "healthy"), ("stuck", "finished")]
 
 
 def _report(ts: float, key: str, status: str = "healthy", **kwargs) -> SandboxReport:
@@ -126,6 +133,16 @@ def test_a_row_keeps_labels_and_last_error_and_ignores_a_late_status(tmp_path: P
     assert (row.first_seen_ts, row.last_exec_ts) == (1.0, 5.0)
 
 
+def test_a_sandbox_torn_down_after_an_error_stays_an_error_until_it_expires(tmp_path: Path):
+    health = SandboxHealth(tmp_path / SNAPSHOT_FILENAME, finished_ttl_s=60.0)
+    health.update(_report(1.0, "a"))
+    health.update(_report(2.0, "a", "error", error="boom"))
+    health.update(_report(2.1, "a", "finished"))
+    assert (health.rows["a"].status, health.rows["a"].finished) == ("error", True)
+    health.write_snapshot(now=100.0)
+    assert not health.rows
+
+
 def test_finished_rows_expire_and_the_table_is_capped(tmp_path: Path):
     health = SandboxHealth(tmp_path / SNAPSHOT_FILENAME, finished_ttl_s=60.0, max_rows=3)
     health.update(_report(0.0, "done", "finished"))
@@ -137,17 +154,19 @@ def test_finished_rows_expire_and_the_table_is_capped(tmp_path: Path):
     assert set(health.rows) == {"new-2", "new-3", "new-4"}, "the longest-silent rows go past the cap"
 
 
-def test_snapshot_round_trip_is_atomic_and_skips_unchanged_writes(tmp_path: Path):
+def test_snapshot_round_trip_is_atomic_and_its_time_advances_without_new_reports(tmp_path: Path):
+    """A static view measures silence up to the last flush, so an all-silent run still shows stale rows."""
     path = tmp_path / "dashboard" / SNAPSHOT_FILENAME
     health = SandboxHealth(path)
-    assert read_snapshot(path) is None
+    health.write_snapshot(now=1.0)
+    assert read_snapshot(path) is None, "no file before any sandbox reports"
     health.update(_report(1.0, "a", task="t"))
     health.write_snapshot(now=2.0)
     ts, [row] = read_snapshot(path)
     assert (ts, row["sandbox_key"], row["task"]) == (2.0, "a", "t")
     assert not path.with_name(SNAPSHOT_FILENAME + ".tmp").exists()
     health.write_snapshot(now=3.0)
-    assert read_snapshot(path)[0] == 2.0
+    assert read_snapshot(path)[0] == 3.0
 
 
 def test_summary_counts_stale_healthy_rows_and_lists_problems_first():
