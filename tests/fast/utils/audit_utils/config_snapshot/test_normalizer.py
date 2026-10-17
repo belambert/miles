@@ -4,7 +4,10 @@ from collections.abc import Callable
 import pytest
 
 from miles.utils.audit_utils.config_snapshot.converter import ConfigSnapshotConverter
-from miles.utils.audit_utils.config_snapshot.generated_value_registry import GENERATED_VALUES_ENV_VAR, generated_value_registry
+from miles.utils.audit_utils.config_snapshot.generated_value_registry import (
+    GENERATED_VALUES_ENV_VAR,
+    generated_value_registry,
+)
 from miles.utils.audit_utils.config_snapshot.models import ConfigSnapshotGeneratedValue
 from miles.utils.audit_utils.config_snapshot.normalizer import normalize_record
 from miles.utils.audit_utils.process_identity import SimpleProcessIdentity
@@ -28,7 +31,10 @@ class TestGeneratedValueRegistration:
         generated_value_registry.register(kind="run_id", value="first")
         generated_value_registry.register(kind="run_id", value="first")
         generated_value_registry.register(kind="run_id", value="second")
-        assert [(item.name, item.value) for item in generated_value_registry.read()] == [("0000", "first"), ("0001", "second")]
+        assert [(item.name, item.value) for item in generated_value_registry.read()] == [
+            ("0000", "first"),
+            ("0001", "second"),
+        ]
         assert GENERATED_VALUES_ENV_VAR not in os.environ
 
     def test_environment_changes_do_not_replace_the_process_registry(self, monkeypatch: pytest.MonkeyPatch) -> None:
