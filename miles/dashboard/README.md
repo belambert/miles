@@ -76,8 +76,8 @@ function: when the sandbox starts, after each command it runs, on an error,
 and on teardown. The call is cheap, never raises, and is a no-op when the
 dashboard is disabled. It works with any sandbox backend: `provider` and
 `sandbox_id` are free-form labels, and miles never talks to the provider.
-Under `--custom-agent-function-mode subproc` the reports travel back with
-the call's result, so they show up when the call returns.
+Under `--custom-agent-function-mode subproc` the agent process sends each
+report to the rollout process as it is made, so a hung call still shows up.
 
 ```python
 from miles.dashboard.hooks import report_sandbox

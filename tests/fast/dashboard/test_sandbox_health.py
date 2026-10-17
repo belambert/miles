@@ -74,11 +74,36 @@ def test_subproc_reports_reach_the_callers_collector(handle: _FakeHandle):
         )
     )
     assert result == "reported"
-    [(reports,)] = handle.push_sandbox_reports.calls
+    reports = [report for (batch,) in handle.push_sandbox_reports.calls for report in batch]
     assert [(r.sandbox_key, r.status, r.provider) for r in reports] == [
         ("a", "healthy", "local"),
         ("a", "finished", None),
     ]
+
+
+def test_a_hung_subproc_call_reports_before_it_returns(handle: _FakeHandle):
+    """A sandbox stuck in setup must show up while its call still runs, not only once it returns."""
+
+    async def run() -> None:
+        call = asyncio.create_task(
+            call_agent_function(
+                sandbox_report_stubs.report_then_hang,
+                mode="subproc",
+                on_child_reports=hooks.push_sandbox_reports,
+                sandbox_key="stuck",
+            )
+        )
+        for _ in range(300):
+            if handle.push_sandbox_reports.calls:
+                break
+            await asyncio.sleep(0.05)
+        call.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await call
+
+    asyncio.run(run())
+    [([report],)] = handle.push_sandbox_reports.calls
+    assert (report.sandbox_key, report.provider) == ("stuck", "local")
 
 
 def _report(ts: float, key: str, status: str = "healthy", **kwargs) -> SandboxReport:
