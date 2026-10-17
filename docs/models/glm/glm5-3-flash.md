@@ -109,44 +109,36 @@ covers the KDA, DSA and hyper-connection paths at once.
 ## 6. LoRA RL
 
 [`scripts/run_glm5_3_flash_lora.py`](https://github.com/radixark/miles/blob/main/scripts/run_glm5_3_flash_lora.py)
-trains a LoRA adapter through the Megatron-Bridge path (`--megatron-to-hf-mode bridge`): the
-Megatron-Bridge `Glm5NextBridge` builds the model straight from the HF checkpoint (the public FP8
-release is dequantized to bf16 while loading, no bf16 copy needed) and the same adapter is served
-live by SGLang, which keeps serving the FP8 checkpoint. With `--lora-base-cpu-backup` the frozen
-base is never re-synced; only the adapter is shipped to the engines each step.
+trains a LoRA adapter through native LoRA (`--megatron-to-hf-mode raw`): the trainer is the
+glm5_next model of section 4, loaded from the `torch_dist` base of section 3, and
+`miles.backends.megatron_utils.lora.native` attaches the adapters. With `--lora-base-cpu-backup`
+SGLang keeps the frozen base across colocated offload and onload, so each step syncs only the
+adapter.
 
-Adapter targets (Megatron names, anchored below `decoder.layers.*`):
+| Layer type | Adapted HF projections |
+|---|---|
+| KDA (34 layers) | `q/k/v/o_proj`, `b_proj`, `f_a/f_b_proj`, `g_a/g_b_proj` |
+| DSA (11 layers) | `q_a/q_b_proj`, `kv_a_proj_with_mqa`, `o_proj` |
+| MLP | dense and shared-expert `gate/up/down_proj` |
 
-| Layer type | Targets | HF names |
-|---|---|---|
-| KDA linear attention (34 layers) | `linear_q`, `linear_k`, `linear_v`, `linear_proj`, `linear_b`, `linear_f_a`, `linear_f_b`, `linear_g_a`, `linear_g_b` | `q/k/v/o_proj`, `b_proj`, `f_a/f_b_proj`, `g_a/g_b_proj` |
-| DSA sparse MLA (11 layers) | `linear_q_down_proj`, `linear_q_up_proj`, `linear_kv_down_proj`, `linear_kv_up_proj`, `linear_proj` | `q_a/q_b_proj`, `kv_a_proj_with_mqa`, `kv_b_proj`, `o_proj` |
-| MLP | `mlp.linear_fc1/2` (dense), `mlp.shared_experts.linear_fc1/2`, `mlp.experts.linear_fc1/2` (288 routed, grouped GEMM) | `gate/up/down_proj` |
+The 288 routed experts stay frozen, since native LoRA has no per-expert adapter. `kv_b_proj` stays
+frozen too: the DSA attention absorbs its weight into the query and output without calling the
+module, so an adapter on it would never run. The launcher's
+`--target-modules attn,mlp --exclude-modules "*.mlp.experts.*,*.self_attn.kv_b_proj"` selects
+exactly the table, and selecting a frozen projection fails at argument validation. The KDA
+`conv1d`, `A_log`, `dt_bias` and `o_norm`, the DSA indexer and the mHC parameters are not LoRA
+targets.
 
-The KDA gate projections (`b/f_a/f_b/g_a/g_b_proj`) are new LoRA targets in both SGLang and
-Megatron-Bridge; the KDA `conv1d`, `A_log`, `dt_bias`, `o_norm`, the kpool
-`index_kpool_compress_gate/ape` and the mHC parameters stay frozen (not linears). The DSA indexer
-(`wq_b`/`wk`/`weights_proj`) receives no gradient on the fused TileLang path and is excluded.
-SGLang serves the adapter with `--lora-backend triton --moe-runner-backend triton
---disable-shared-experts-fusion`; on a KDA model the LoRA-enabled engine keeps the unfused
-`qkv_proj` / gate layout (the fused `fused_qkvbfg_a_proj` has no LoRA wrapper).
+Serving the adapter needs SGLang LoRA on the KDA projections, which `sglang-miles` does not have
+yet; it is in [sgl-project/sglang#37753](https://github.com/sgl-project/sglang/pull/37753).
 
 ```bash
-# 4-layer slice, one node
+python scripts/run_glm5_3_flash_lora.py prepare --model-name GLM-5.3-Flash-4layer
 python scripts/run_glm5_3_flash_lora.py train --model-name GLM-5.3-Flash-4layer \
-  --num-nodes 1 --num-gpus-per-node 8 --task gsm8k
+  --num-nodes 1 --num-gpus-per-node 8
 
-# full model, 3 x 8 GPUs (TP 8 / EP 24 / PP 1, one colocated 8-GPU engine per node)
-export MILES_SCRIPT_EXTERNAL_RAY=1 MASTER_ADDR=<head ip>   # after `ray start` on every node
+# full model, 3 x 8 GPUs: TP 8, EP 24, PP 1, one colocated 8-GPU engine per node
+export MILES_SCRIPT_EXTERNAL_RAY=1   # after `ray start` on every node
 python scripts/run_glm5_3_flash_lora.py train --model-name GLM-5.3-Flash \
-  --num-nodes 3 --num-gpus-per-node 8 --task gsm8k --rollout-max-response-len 8192
+  --num-nodes 3 --num-gpus-per-node 8
 ```
-
-Validation (2026-09-03, H200):
-
-| Check | Result |
-|---|---|
-| SGLang LoRA vs merged-weight reference, 4-layer slice, per module group (KDA / MLA / MLP / routed experts), same kernels | mean abs logprob diff 0.064 / 0.056 / 0.046 / 0.011; a zero-B adapter reproduces the base bit-exactly |
-| Megatron-Bridge vs SGLang, 4-layer slice, TP 2 + SP, identical synthetic adapter | base 0.070, LoRA 0.061 mean abs logprob diff (the slice's own kernel-variant noise floor); adapter tensors round-trip exactly |
-| SGLang full FP8 model, gsm8k 5-shot, 200 questions | base 92.0 %, zero-B LoRA 93.0 %, random LoRA 93.5 % |
-| miles 4-layer LoRA RL smoke (colocated, R3) | `train/train_rollout_logprob_abs_diff` 0.012, `train/train_rollout_kl` 1.4e-4 |
