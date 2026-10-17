@@ -312,7 +312,7 @@ async def _post_buffer(url: str, payload: dict) -> np.ndarray:
                         mmap.mmap,
                         -1,
                         max(length, 1),
-                        flags=mmap.MAP_PRIVATE | mmap.MAP_ANONYMOUS | getattr(mmap, "MAP_POPULATE", 0),
+                        flags=mmap.MAP_PRIVATE | mmap.MAP_ANONYMOUS | getattr(mmap, "MAP_POPULATE", 0),  # config-access-exempt: MAP_POPULATE is an optional platform mmap constant
                     )
                 except (OSError, OverflowError) as exc:
                     raise httpx.ReadError(f"cannot allocate reply buffer for Content-Length {length}") from exc

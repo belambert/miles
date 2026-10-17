@@ -16,7 +16,7 @@ def validate_hf_config(hf_config, *, verified: bool, rank: int) -> None:
         logger.warning(
             "[fsdp config_checks] model_type=%r has no recorded FSDP validation; "
             "it will load via the generic HF path — correctness is not guaranteed.",
-            getattr(hf_config, "model_type", None),
+            getattr(hf_config, "model_type", None),  # config-access-exempt: third-party HF configurations may omit model_type
         )
 
 

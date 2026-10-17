@@ -52,7 +52,7 @@ def _merge_sample_pair(a: Sample, b: Sample, tokenizer) -> Sample:
         return x
 
     def _per_token(sample: Sample, field: str, default) -> list:
-        value = getattr(sample, field)
+        value = getattr(sample, field)  # config-access-exempt: iterate the explicit sample completion field list
         return value if value is not None else [default] * sample.response_length
 
     def _merge_optional_per_token(field):

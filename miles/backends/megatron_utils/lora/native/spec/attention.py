@@ -82,7 +82,7 @@ class GQAAttentionSpec(AttentionSpecBase):
     )
 
     def validate(self, config, *, tp_size: int) -> None:
-        num_query_groups = getattr(config, "num_query_groups", None)
+        num_query_groups = getattr(config, "num_query_groups", None)  # config-access-exempt: architecture configs without query groups represent ordinary multi-head attention
         assert num_query_groups is None or num_query_groups >= tp_size, (
             "native LoRA (--megatron-to-hf-mode raw) does not support this architecture: "
             f"num_query_groups ({num_query_groups}) < tensor parallel size ({tp_size}), so mcore splits a "
@@ -142,7 +142,7 @@ class MLAAttentionSpec(AttentionSpecBase):
 
     def validate(self, config, *, tp_size: int) -> None:
         del tp_size
-        assert getattr(config, "q_lora_rank", None), (
+        assert getattr(config, "q_lora_rank", None), (  # config-access-exempt: only MLA architecture configs declare q_lora_rank
             "native LoRA does not support multi-latent attention without q_lora_rank "
             "(DeepSeek-V2-Lite, Moonlight): the query path is uncompressed, so the adapter exports "
             "an unfused q_proj alongside kv_a_proj_with_mqa, and SGLang's loader expects the fused "
@@ -282,6 +282,6 @@ class InklingAttentionSpec(AttentionSpecBase):
 
 
 def _is_replicated_linear(module: nn.Module, full_out: int) -> bool:
-    if getattr(module, "parallel_mode", None) == "duplicated":
+    if getattr(module, "parallel_mode", None) == "duplicated":  # config-access-exempt: third-party projection modules may omit parallel_mode
         return True
     return module.weight.shape[0] == full_out

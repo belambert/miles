@@ -43,7 +43,7 @@ def _apply_glm5_next_config(config, text_config) -> None:
     # index_kpool_compress is a checkpoint field the native config does not declare
     assert (
         text_config.index_kpool > 1
-        and getattr(text_config, "index_kpool_compress", False)
+        and getattr(text_config, "index_kpool_compress", False)  # config-access-exempt: only compressed-index model configurations declare index_kpool_compress
         and text_config.index_kpool_always_select_tail
     ), "GLM-5.3 kpool indexer expects index_kpool>1 with compress and always_select_tail"
 
