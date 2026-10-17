@@ -1,4 +1,4 @@
-import { getMeta } from "./api.js";
+import { getMeta, refreshMeta } from "./api.js";
 import { renderMetrics } from "./views_metrics.js";
 import { renderRollout } from "./views_rollout.js";
 import { renderSandboxes } from "./views_sandboxes.js";
@@ -142,5 +142,25 @@ async function render() {
   }
 }
 
+// a live run reports its first sandbox event after the page has loaded:
+// poll until it does, then show the Sandboxes tab
+const SANDBOX_TAB_POLL_MS = 10000;
+
+async function showSandboxTabOnceEventsArrive() {
+  try {
+    const meta = await getMeta();
+    if (meta.mode !== "follow" || meta.capabilities.has_sandbox_events) return;
+    const fresh = await refreshMeta();
+    if (fresh.capabilities.has_sandbox_events) {
+      crumbs(parseRoute(), fresh);
+      return;
+    }
+  } catch (err) {
+    // the server may be restarting; try again on the next tick
+  }
+  setTimeout(showSandboxTabOnceEventsArrive, SANDBOX_TAB_POLL_MS);
+}
+
 window.addEventListener("hashchange", render);
 render();
+showSandboxTabOnceEventsArrive();
