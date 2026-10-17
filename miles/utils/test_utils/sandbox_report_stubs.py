@@ -14,4 +14,7 @@ async def report_sandbox_health(sandbox_key: str, **kwargs) -> str:
 
 async def report_then_hang(sandbox_key: str, **kwargs) -> None:
     report_sandbox(sandbox_key, provider="local")
-    await asyncio.sleep(3600)
+    try:
+        await asyncio.sleep(3600)
+    finally:
+        report_sandbox(sandbox_key, status="finished")

@@ -116,7 +116,9 @@ async def call_agent_function(
         env={**os.environ, rollout_limits.SCOPE_ENV_VAR: rollout_limits.current_scope()},
     )
     try:
-        output = await _exchange(proc, call, on_child_reports)
+        await _send_call(proc, call)
+        # not cancelled with the call, so reports from the agent's cancel cleanup (its teardown) still arrive
+        output = await asyncio.shield(_read_results(proc, on_child_reports))
     except asyncio.CancelledError:
         _terminate(proc)
         raise
@@ -126,12 +128,7 @@ async def call_agent_function(
     return _unpack_outcome(output)
 
 
-async def _exchange(
-    proc: asyncio.subprocess.Process, call: bytes, on_child_reports: Callable[[list[Any]], None] | None
-) -> bytes | None:
-    """Send the call, pass on reports as they arrive, and return the pickled outcome, or None if none came.
-
-    The outcome arrives before the process finishes its leftover cleanup."""
+async def _send_call(proc: asyncio.subprocess.Process, call: bytes) -> None:
     try:
         proc.stdin.write(call)
         await proc.stdin.drain()
@@ -139,6 +136,14 @@ async def _exchange(
         pass  # the agent process died before reading its call; its exit code says why
     finally:
         proc.stdin.close()
+
+
+async def _read_results(
+    proc: asyncio.subprocess.Process, on_child_reports: Callable[[list[Any]], None] | None
+) -> bytes | None:
+    """Pass on reports as they arrive and return the pickled outcome, or None if none came.
+
+    The outcome arrives before the process finishes its leftover cleanup."""
     while True:
         try:
             header = await proc.stdout.readexactly(_FRAME_HEADER_BYTES)
