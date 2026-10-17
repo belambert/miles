@@ -243,8 +243,8 @@ def make_app(
     @app.get("/api/sandboxes")
     def sandboxes(stale_after_s: float = 600.0, bucket_s: float = 60.0):
         with _translate_errors():
-            if stale_after_s <= 0 or bucket_s <= 0:
-                raise ValueError(f"{stale_after_s=} and {bucket_s=} must be positive")
+            if not (0 < stale_after_s < math.inf and 0 < bucket_s < math.inf):
+                raise ValueError(f"{stale_after_s=} and {bucket_s=} must be positive and finite")
             events = store.records[Stream.SANDBOX_EVENTS]
             # a finished run is judged at its last event, not at viewing time
             now = time.time() if follow or not events else max(event.ts for event in events)
