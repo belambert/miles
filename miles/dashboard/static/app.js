@@ -90,7 +90,7 @@ function crumbs(route, meta) {
     };
     parts.push(nav("Rollouts", "#/rollout/latest", onRollout, onRollout ? replaceInPlace : null));
   }
-  if (meta.capabilities.has_sandbox_events) {
+  if (meta.capabilities.has_sandboxes) {
     parts.push(nav("Sandboxes", "#/sandboxes", route.view === "sandboxes"));
   }
   if ((route.view === "rollout" || route.view === "tokens") && route.rolloutId !== null) {
@@ -142,25 +142,25 @@ async function render() {
   }
 }
 
-// a live run reports its first sandbox event after the page has loaded:
+// a live run's first sandbox may report after the page has loaded:
 // poll until it does, then show the Sandboxes tab
 const SANDBOX_TAB_POLL_MS = 10000;
 
-async function showSandboxTabOnceEventsArrive() {
+async function showSandboxTabOnceReported() {
   try {
     const meta = await getMeta();
-    if (meta.mode !== "follow" || meta.capabilities.has_sandbox_events) return;
+    if (meta.mode !== "follow" || meta.capabilities.has_sandboxes) return;
     const fresh = await refreshMeta();
-    if (fresh.capabilities.has_sandbox_events) {
+    if (fresh.capabilities.has_sandboxes) {
       crumbs(parseRoute(), fresh);
       return;
     }
   } catch (err) {
     // the server may be restarting; try again on the next tick
   }
-  setTimeout(showSandboxTabOnceEventsArrive, SANDBOX_TAB_POLL_MS);
+  setTimeout(showSandboxTabOnceReported, SANDBOX_TAB_POLL_MS);
 }
 
 window.addEventListener("hashchange", render);
 render();
-showSandboxTabOnceEventsArrive();
+showSandboxTabOnceReported();

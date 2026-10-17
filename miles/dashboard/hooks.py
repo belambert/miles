@@ -17,13 +17,12 @@ import time
 from dataclasses import dataclass
 
 from miles.dashboard.logging_utils import RateLimitedWarner
+from miles.dashboard.sandbox_health import STATUSES, SandboxReport, SandboxStatus
 from miles.dashboard.store import (
     DataBufferSample,
     EngineInfo,
     PhaseEvent,
     Role,
-    SandboxEvent,
-    SandboxStage,
     TopologySnapshot,
     TrajectoryEvent,
     TrajectoryEventKind,
@@ -366,51 +365,53 @@ def report_data_buffer(length: int | None) -> None:
         _warner.warn("dashboard data-buffer report failed")
 
 
-def report_sandbox_event(
-    trial_id: str,
-    stage: SandboxStage,
+def report_sandbox(
+    sandbox_key: str,
     *,
-    task: str = "",
-    exception_type: str | None = None,
+    task: str | None = None,
     provider: str | None = None,
     sandbox_id: str | None = None,
-    reward: float | None = None,
+    status: SandboxStatus = "healthy",
+    error: str | None = None,
 ) -> None:
-    """Record one sandbox lifecycle step for the dashboard's Sandboxes view.
+    """Report one sandbox's health to the dashboard's Sandboxes view.
 
-    Works from agent and custom generate functions in the rollout manager
-    process and from ``subproc`` agent calls, whose events reach the collector
-    through the rollout manager. A no-op when the dashboard is disabled."""
+    Call it when the sandbox starts, after each command it runs (the call time
+    becomes its "last executed" time), on an error and on teardown
+    (``status="finished"``). Works with any sandbox backend: ``provider`` and
+    ``sandbox_id`` are free-form labels. Works in the rollout manager process
+    and in ``subproc`` agent calls; a no-op when the dashboard is disabled."""
     try:
-        event = SandboxEvent(
+        if status not in STATUSES:
+            raise ValueError(f"{status=} must be one of {STATUSES}")
+        report = SandboxReport(
             ts=time.time(),
-            trial_id=str(trial_id),
-            task=str(task),
-            stage=SandboxStage(stage).value,
-            exception_type=_optional_str(exception_type),
+            sandbox_key=str(sandbox_key),
+            status=status,
+            task=_optional_str(task),
             provider=_optional_str(provider),
             sandbox_id=_optional_str(sandbox_id),
-            reward=None if reward is None else float(reward),
+            error=_optional_str(error),
         )
-        if report_to_caller(event):
+        if report_to_caller(report):
             return
-        push_sandbox_events([event])
+        push_sandbox_reports([report])
     except Exception:
-        _warner.warn("dashboard sandbox event report failed")
+        _warner.warn("dashboard sandbox report failed")
 
 
-def push_sandbox_events(events: list[SandboxEvent]) -> None:
-    """Send sandbox events to the collector, e.g. those a ``subproc`` agent call reported."""
+def push_sandbox_reports(reports: list[SandboxReport]) -> None:
+    """Send sandbox reports to the collector, e.g. those a ``subproc`` agent call made."""
     from miles.dashboard import backend
 
     handle = backend.current_collector()
     if handle is None:
-        _no_collector_warner.warn("no dashboard collector in this process; sandbox events are dropped")
+        _no_collector_warner.warn("no dashboard collector in this process; sandbox reports are dropped")
         return
     try:
-        handle.push_sandbox_events.remote(events)
+        handle.push_sandbox_reports.remote(reports)
     except Exception:
-        _warner.warn("dashboard sandbox event report failed")
+        _warner.warn("dashboard sandbox report failed")
 
 
 def _optional_str(value: object) -> str | None:

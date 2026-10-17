@@ -61,51 +61,47 @@ Views:
   first generated token, + a selectable metric-vs-position chart, loss-masked
   regions dimmed).
 
-- **Sandboxes** — shown once an agent function reports sandbox events (see
-  below): trials per current stage, failures per exception type over time,
-  and stale trials (no event for longer than a configurable number of
-  minutes, also settable as `#/sandboxes?stale_min=N`; for a finished run,
-  measured from its last event).
+- **Sandboxes** — shown once an agent function reports a sandbox (see
+  below): how many sandboxes are healthy, erroring or stale, and a table of
+  them with their last error and when they last ran a command. A healthy
+  sandbox is stale when it has not reported for longer than a configurable
+  number of minutes (also settable as `#/sandboxes?stale_min=N`; for a
+  finished run, measured from the last snapshot).
 
-## Report sandbox events
+## Report sandbox health
 
-Agentic rollouts that run each trial in a sandbox can make the trial's
-lifecycle visible by calling `report_sandbox_event` from the agent / custom
-generate function. The call is fire-and-forget and a no-op when the
+Agentic rollouts that run each trial in a sandbox can make its health
+visible by calling `report_sandbox` from the agent / custom generate
+function: when the sandbox starts, after each command it runs, on an error,
+and on teardown. The call is cheap, never raises, and is a no-op when the
 dashboard is disabled. It works with any sandbox backend: `provider` and
 `sandbox_id` are free-form labels, and miles never talks to the provider.
-Under `--custom-agent-function-mode subproc` the events travel back with the
-call's result, so they show up when the call returns, and a call that is
-cancelled or whose process dies reports none.
+Under `--custom-agent-function-mode subproc` the reports travel back with
+the call's result, so they show up when the call returns.
 
 ```python
-from miles.dashboard.hooks import report_sandbox_event
-from miles.dashboard.store import SandboxStage
+from miles.dashboard.hooks import report_sandbox
 
 
 async def run_trial(trial_id: str, task: str, env) -> float:
-    report_sandbox_event(trial_id, SandboxStage.CREATED, task=task, provider=env.name, sandbox_id=env.id)
+    report_sandbox(trial_id, task=task, provider=env.name, sandbox_id=env.id)
     try:
-        await env.setup()
-        report_sandbox_event(trial_id, SandboxStage.SETUP_DONE, task=task)
-        report_sandbox_event(trial_id, SandboxStage.AGENT_STARTED, task=task)
-        await run_agent(env)
-        report_sandbox_event(trial_id, SandboxStage.AGENT_DONE, task=task)
-        reward = await verify(env)
-        report_sandbox_event(trial_id, SandboxStage.VERIFIER_DONE, task=task, reward=reward)
+        for command in commands_for(task):
+            await env.exec(command)
+            report_sandbox(trial_id)  # heartbeat: sets "last executed"
+        return await verify(env)
     except Exception as e:
-        await env.close()
-        report_sandbox_event(trial_id, SandboxStage.FAILED, task=task, exception_type=type(e).__name__)
+        report_sandbox(trial_id, status="error", error=f"{type(e).__name__}: {e}")
         raise
-    await env.close()
-    report_sandbox_event(trial_id, SandboxStage.TORN_DOWN, task=task)
-    return reward
+    finally:
+        await env.close()
+        report_sandbox(trial_id, status="finished")
 ```
 
-A trial's current stage is its latest event, so a failed trial reports
-`FAILED` after its teardown. Events land in
-`{dump-details}/dashboard/sandbox_events.jsonl`; `/api/sandboxes` serves the
-aggregate (`stale_after_s`, `bucket_s` query parameters).
+Only the latest state of each sandbox is kept; finished sandboxes drop out
+after 10 minutes. The collector overwrites
+`{dump-details}/dashboard/sandboxes.json` on every flush, and
+`/api/sandboxes?stale_after_s=N` serves the counts and rows.
 
 ## Develop
 

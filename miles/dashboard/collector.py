@@ -26,9 +26,11 @@ import sys
 import threading
 import time
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, ClassVar
 
 from miles.dashboard.logging_utils import RateLimitedWarner
+from miles.dashboard.sandbox_health import SNAPSHOT_FILENAME, SandboxHealth, SandboxReport
 from miles.dashboard.sglang_scraper import DEFAULT_METRIC_WHITELIST, ScrapeMode, SglangScraper
 from miles.dashboard.store import (
     DataBufferSample,
@@ -41,7 +43,6 @@ from miles.dashboard.store import (
     MetricStore,
     PhaseEvent,
     Record,
-    SandboxEvent,
     TopologySnapshot,
     TrajectoryEvent,
 )
@@ -154,6 +155,7 @@ class DashboardCollector:
         self._store = MetricStore(config.dashboard_dir)
         self._store.write_meta(Meta(run_name=config.run_name, start_ts=config.start_ts, args=config.args_snapshot))
         self._lock = threading.Lock()
+        self._sandboxes = SandboxHealth(Path(config.dashboard_dir) / SNAPSHOT_FILENAME)
         self._warner = RateLimitedWarner(logger)
         self._dropped_since_flush = 0
         self._last_topology: TopologySnapshot | None = None
@@ -210,9 +212,10 @@ class DashboardCollector:
         for event in batch:
             self._append(event)
 
-    def push_sandbox_events(self, batch: list[SandboxEvent]) -> None:
-        for event in batch:
-            self._append(event)
+    def push_sandbox_reports(self, batch: list[SandboxReport]) -> None:
+        with self._lock:
+            for report in batch:
+                self._sandboxes.update(report)
 
     def push_gpu_samples(self, node: str, batch: list[GpuSample]) -> None:
         for sample in batch:
@@ -357,6 +360,10 @@ class DashboardCollector:
                     self._dropped_since_flush,
                 )
                 self._dropped_since_flush = 0
+            try:
+                self._sandboxes.write_snapshot(now=time.time())
+            except OSError:
+                self._warner.warn("dashboard sandbox snapshot write failed; will retry next flush")
             dropped_before = self._store.unserializable_dropped
             try:
                 self._store.flush()
