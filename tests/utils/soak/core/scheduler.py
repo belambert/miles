@@ -58,7 +58,14 @@ class SoakActionScheduler:
             kind: [target for target in observation.targets or [] if target.kind == kind]
             for kind in self.config.target_configs
         }
-        due_types = sorted(kind for kind, due_at in self.due_of_type.items() if now >= due_at)
+        unproven_types = {
+            kind
+            for kind in self.config.target_configs
+            if {form.name for form in self.forms[kind]} - compute_successful_form_names(events, kind=kind)
+        }
+        due_types = sorted(
+            kind for kind, due_at in self.due_of_type.items() if now >= due_at or kind in unproven_types
+        )
         if not due_types:
             return None
 
@@ -83,7 +90,7 @@ class SoakActionScheduler:
             )
             return None
 
-        kind = self.rng.choice(ready_types)
+        kind = self.rng.choice([kind for kind in ready_types if kind in unproven_types] or ready_types)
         form = _draw_form(self.forms[kind], events=events, kind=kind, rng=self.rng)
         targets = _eligible_targets(
             targets=targets_of_type[kind],

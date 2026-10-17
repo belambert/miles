@@ -73,21 +73,35 @@ class TestSchedulerDraws:
 
         assert _scheduler(forms, seed=1).due_of_type != _scheduler(forms, seed=2).due_of_type
 
-    def test_a_kind_is_not_chosen_before_its_due_time(self) -> None:
-        """Nothing is injected until the drawn interval elapses."""
+    def test_a_covered_kind_is_not_chosen_before_its_due_time(self) -> None:
+        """After coverage, injections still wait for the drawn interval."""
         scheduler = _scheduler({"actor": [_FakeForm()]})
         due = scheduler.due_of_type["actor"]
-        events = _polls(_actors())
+        earlier = _request(_actors()[0])
+        events = [
+            _requested(earlier, at=_at(0)),
+            _applied(earlier, at=_at(1)),
+            _result(earlier, at=_at(2)),
+            *_polls(_actors(), start=3),
+        ]
 
         assert due > 0
         assert scheduler.choose(events=events, now=due * 0.999) is None
         assert scheduler.choose(events=events, now=due) is not None
 
     def test_each_kind_follows_its_own_clock(self) -> None:
-        """Only the kind whose own due time passed is chosen."""
+        """Covered kinds retain independent random clocks."""
         scheduler = _scheduler({"actor": [_FakeForm()], "rollout": [_FakeForm()]})
         earlier = min(scheduler.due_of_type, key=scheduler.due_of_type.__getitem__)
-        events = _polls([*_actors(), *(_cell_target(kind="rollout", cell_index=index) for index in range(2))])
+        events = []
+        for kind in ("actor", "rollout"):
+            earlier_request = _request(_cell_target(kind=kind), request_id=kind)
+            events += [
+                _requested(earlier_request, at=_at(0)),
+                _applied(earlier_request, at=_at(1)),
+                _result(earlier_request, at=_at(2)),
+            ]
+        events += _polls([*_actors(), *(_cell_target(kind="rollout", cell_index=index) for index in range(2))])
 
         request = scheduler.choose(events=events, now=scheduler.due_of_type[earlier])
 
@@ -289,6 +303,33 @@ class TestSchedulerFormPreference:
         if applied:
             events.append(_applied(earlier, at=_at(1)))
         return [*events, _result(earlier, at=_at(2)), *_polls(_actors(), start=3)]
+
+    def test_missing_coverage_does_not_wait_for_a_long_random_interval(self) -> None:
+        """The remaining form must run even when its next random deadline is beyond the soak."""
+        scheduler = _scheduler({"actor": [_FakeForm(name="a"), _FakeForm(name="b")]})
+
+        request = scheduler.choose(events=self._proven("a", applied=True), now=0)
+
+        assert request is not None
+        assert request.form_name == "b"
+
+    def test_uncovered_kind_precedes_an_already_covered_due_kind(self) -> None:
+        """Repeated faults in one kind cannot consume another kind's missing coverage."""
+        scheduler = _scheduler({"actor": [_FakeForm(name="a")], "rollout": [_FakeForm(name="b")]}, seed=1)
+        events = self._proven("a", applied=True)
+        events += _polls([*_actors(), *(_cell_target(kind="rollout", cell_index=i) for i in range(2))], start=4)
+
+        request = scheduler.choose(events=events, now=_LATER)
+
+        assert request is not None
+        assert request.target.kind == "rollout"
+
+    def test_coverage_still_requires_quiescent_observations(self) -> None:
+        """Missing coverage never bypasses the healthy observation gate."""
+        scheduler = _scheduler({"actor": [_FakeForm()]}, quiescent_polls_required=2)
+
+        assert scheduler.choose(events=_polls(_actors()), now=0) is None
+        assert scheduler.choose(events=_polls(_actors(), count=2), now=0) is not None
 
     def test_a_form_that_never_worked_is_preferred(self) -> None:
         """Once a form has landed, the others are drawn until they land too."""

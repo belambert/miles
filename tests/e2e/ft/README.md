@@ -466,13 +466,13 @@ Architecture (external fault injection, not inside the training loop):
   2. SoakRunner (tests/utils/soak/core/) iterates every 2s on one asyncio loop:
      a. Observe the targeted cells and append the snapshot to the event log
      b. Admit nothing until every earlier action has recovered
-     c. Collect the cell kinds whose own schedule is due; stop here if none
+     c. Collect kinds with an uncovered fault form or an expired random schedule; stop here if none
      d. A due kind is ready only at a quiescent point: every expected replica present, Running and
         not failing its health check for 60 consecutive polls (~120s); a checker paused by a
         weight update reads Unknown, which is not a failure; every request resets its kind's streak
-     e. Draw a ready kind and one of its fault forms - preferring one the log shows has never
-        worked - then a cell that form may hit: all replicas ready, >= 2 of them when the
-        form harms its target
+     e. Prefer ready kinds with uncovered forms, then draw one of their unproven forms; once all
+        forms worked, draw from all ready kinds and forms. Choose a cell that form may hit:
+        all replicas ready, >= 2 of them when the form harms its target
      f. Record the request, apply it as its own task, and draw that kind's next injection
         time once the fault is applied
   3. The immediate fault hook kills the actor's process; on kubernetes the test layer also signals
@@ -482,7 +482,9 @@ Architecture (external fault injection, not inside the training loop):
   6. Whether training passes or fails: close admission, a final observation in which every
      action must have returned and recovered, teardown, then the evidence archive
 
-Per-kind schedules: exponential, mean that kind's --*-crash-interval-seconds
+Per-kind schedules: exponential, mean that kind's --*-crash-interval-seconds.
+Uncovered kinds bypass this random delay, but retain every recovery and quiescence gate;
+once their forms have all worked, their random schedule applies to further injections.
 
 Witnesses, counted per kind:
   forms   -> every form the enabled components make available applied at least once
