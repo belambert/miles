@@ -137,7 +137,7 @@ def _sandbox_snapshot(store: MetricStore, truth: DummyTelemetryTruth, samples_pe
             if i % 8 == 7
             else ("finished" if i % 5 == 4 else "healthy", None)
         )
-        health.update(SandboxReport(t1 - i, key, status, error=error))
+        health.update(SandboxReport(t1 - (t1 - started) / 4, key, status, error=error))
     health.write_snapshot(now=t1)
 
 
