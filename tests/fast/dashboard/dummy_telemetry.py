@@ -29,6 +29,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
+from miles.dashboard.sandbox_health import SNAPSHOT_FILENAME, SandboxHealth, SandboxReport
 from miles.dashboard.store import (
     EngineInfo,
     EngineSample,
@@ -38,8 +39,6 @@ from miles.dashboard.store import (
     MetricStore,
     PhaseEvent,
     Role,
-    SandboxEvent,
-    SandboxStage,
     TopologySnapshot,
     TrajectoryEvent,
     TrajectoryEventKind,
@@ -120,35 +119,26 @@ def _trajectory_events(store: MetricStore, truth: DummyTelemetryTruth, samples_p
             emit(TrajectoryEventKind.ATTEMPT_END, start + (15.0 if agentic else 7.0), detail="completed")
 
 
-def _sandbox_events(store: MetricStore, truth: DummyTelemetryTruth, samples_per_step: int) -> None:
-    """Some trials fail with one of two exception types; the first trial never finishes."""
-    for step in range(truth.steps):
-        rollout_t0, rollout_t1 = truth.rollout_interval(step)
-        for i in range(samples_per_step):
-            trial_id = f"trial-{step}-{i}"
-            t0 = rollout_t0 + (rollout_t1 - rollout_t0) * i / samples_per_step
-            stages = [SandboxStage.CREATED, SandboxStage.SETUP_DONE, SandboxStage.AGENT_STARTED]
-            stuck = step == 0 and i == 0
-            exception_type = (
-                "SandboxTimeoutError" if i % 8 == 7 else "ConnectionResetError" if i % (5 + step) == 2 else None
-            )
-            if exception_type and not stuck:
-                stages.append(SandboxStage.FAILED)
-            elif not stuck:
-                stages += [SandboxStage.AGENT_DONE, SandboxStage.VERIFIER_DONE, SandboxStage.TORN_DOWN]
-            for k, stage in enumerate(stages):
-                store.append(
-                    SandboxEvent(
-                        ts=t0 + k,
-                        trial_id=trial_id,
-                        task=f"task-{i % 4}",
-                        stage=stage.value,
-                        exception_type=exception_type if stage == SandboxStage.FAILED else None,
-                        provider="docker",
-                        sandbox_id=f"sbx-{step}-{i}",
-                        reward=1.0 if stage == SandboxStage.VERIFIER_DONE else None,
-                    )
-                )
+def _sandbox_snapshot(store: MetricStore, truth: DummyTelemetryTruth, samples_per_step: int) -> None:
+    """The last step's sandboxes: most healthy, every eighth erroring, every fifth
+    finished, and the first silent for 15 minutes before the snapshot."""
+    t0, t1 = truth.rollout_interval(truth.steps - 1)
+    health = SandboxHealth(store.dir / SNAPSHOT_FILENAME)
+    for i in range(samples_per_step):
+        key = f"trial-{i}"
+        started = t1 - 900.0 if i == 0 else t0 + (t1 - t0) * i / samples_per_step
+        health.update(
+            SandboxReport(started, key, "healthy", task=f"task-{i % 4}", provider="docker", sandbox_id=f"sbx-{i}")
+        )
+        if i == 0:
+            continue
+        status, error = (
+            ("error", "TimeoutError: command timed out")
+            if i % 8 == 7
+            else ("finished" if i % 5 == 4 else "healthy", None)
+        )
+        health.update(SandboxReport(t1 - i, key, status, error=error))
+    health.write_snapshot(now=t1)
 
 
 def dump_dummy_telemetry(
@@ -294,6 +284,6 @@ def dump_dummy_telemetry(
                 )
 
     _trajectory_events(store, truth, samples_per_step)
-    _sandbox_events(store, truth, samples_per_step)
+    _sandbox_snapshot(store, truth, samples_per_step)
     store.flush()
     return truth
