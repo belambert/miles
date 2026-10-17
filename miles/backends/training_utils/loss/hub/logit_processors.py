@@ -334,7 +334,9 @@ def _fused_log_probs_and_entropy(
         rows,
         torch.cat(targets).to(device),
         tp_group=get_parallel_state().tp.group,
-        vocab_size=getattr(args, "vocab_size", None),  # a Megatron flag; other backends' logits are unpadded
+        vocab_size=(
+            args.backend.vocab_size if args.train_backend == "megatron" else None
+        ),  # a Megatron flag; other backends' logits are unpadded
         temperature=args.rollout_temperature,
         with_entropy=with_entropy,
         entropy_requires_grad=entropy_requires_grad,
