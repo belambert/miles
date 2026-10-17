@@ -12,6 +12,7 @@ It is a plain subprocess rather than a Ray task because
 import asyncio
 import contextlib
 import ctypes
+import io
 import logging
 import os
 import pickle
@@ -42,6 +43,9 @@ _CHILD_BOOTSTRAP = (
 
 _PR_SET_PDEATHSIG = 1
 
+# what a ``subproc`` agent queues for its caller (see report_to_caller); None outside such a call
+_caller_reports: list[Any] | None = None
+
 
 class _RemoteTraceback(Exception):
     """The agent process's traceback, chained under the error it raised, as concurrent.futures does."""
@@ -54,8 +58,27 @@ class _RemoteTraceback(Exception):
         return self.tb
 
 
-async def call_agent_function(fn: Callable[..., Awaitable[Any]], *, mode: str, **kwargs: Any) -> Any:
-    """Await ``fn(**kwargs)`` on this loop (``inline``) or in a child process of its own (``subproc``)."""
+def report_to_caller(item: Any) -> bool:
+    """Queue a picklable ``item`` for the process that made this ``subproc`` agent call.
+
+    The caller gets the queued items with the outcome, through ``on_child_reports``.
+    Returns False, queuing nothing, when not inside a ``subproc`` agent call."""
+    if _caller_reports is None:
+        return False
+    _caller_reports.append(item)
+    return True
+
+
+async def call_agent_function(
+    fn: Callable[..., Awaitable[Any]],
+    *,
+    mode: str,
+    on_child_reports: Callable[[list[Any]], None] | None = None,
+    **kwargs: Any,
+) -> Any:
+    """Await ``fn(**kwargs)`` on this loop (``inline``) or in a child process of its own (``subproc``).
+
+    Under ``subproc``, ``on_child_reports`` receives what the agent queued with ``report_to_caller``."""
     if mode == "inline":
         return await fn(**kwargs)
     # pickled before the process starts, so an unpicklable argument fails here
@@ -77,7 +100,10 @@ async def call_agent_function(fn: Callable[..., Awaitable[Any]], *, mode: str, *
     if not output:
         returncode = await proc.wait()
         raise RuntimeError(f"The agent process exited with code {returncode} before returning a result")
-    return _unpack_outcome(output)
+    reports, outcome = _unpack_output(output)
+    if reports and on_child_reports is not None:
+        on_child_reports(reports)
+    return _unpack_outcome(outcome)
 
 
 async def _exchange(proc: asyncio.subprocess.Process, call: bytes) -> bytes:
@@ -104,8 +130,13 @@ def _send_signal(proc: asyncio.subprocess.Process, sig: signal.Signals) -> None:
             proc.send_signal(sig)
 
 
-def _unpack_outcome(output: bytes) -> Any:
-    outcome = pickle.loads(output)
+def _unpack_output(output: bytes) -> tuple[list[Any], tuple]:
+    stream = io.BytesIO(output)
+    reports = pickle.load(stream)
+    return reports, pickle.load(stream)
+
+
+def _unpack_outcome(outcome: tuple) -> Any:
     if outcome[0] == "ok":
         return outcome[1]
     _, error, child_traceback = outcome
@@ -113,7 +144,9 @@ def _unpack_outcome(output: bytes) -> Any:
 
 
 def _child_main(parent_pid: int) -> None:
+    global _caller_reports
     _die_with_parent(parent_pid)
+    _caller_reports = []
     # The outcome goes to the original stdout; what the agent prints goes to stderr instead.
     outcome_file = os.fdopen(os.dup(1), "wb")
     os.dup2(2, 1)
@@ -191,7 +224,7 @@ def _exit_after(seconds: float) -> threading.Timer:
 
 def _send_outcome(outcome_file: BinaryIO, outcome: tuple | None) -> None:
     if outcome is not None:
-        outcome_file.write(_dump_outcome(outcome))
+        outcome_file.write(_dump_reports() + _dump_outcome(outcome))
     outcome_file.close()  # the caller stops waiting here
 
 
@@ -200,6 +233,14 @@ def _exit(code: int) -> NoReturn:
     sys.stderr.flush()
     # skips interpreter shutdown, which would wait without limit for a thread still running
     os._exit(code)
+
+
+def _dump_reports() -> bytes:
+    try:
+        return pickle.dumps(_caller_reports or [])
+    except Exception:
+        traceback.print_exc()
+        return pickle.dumps([])
 
 
 def _dump_outcome(outcome: tuple) -> bytes:

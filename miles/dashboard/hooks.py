@@ -28,6 +28,7 @@ from miles.dashboard.store import (
     TrajectoryEvent,
     TrajectoryEventKind,
 )
+from miles.rollout.agentic.agent_function import report_to_caller
 from miles.utils.lifecycle import TrajectoryLifecycle
 from miles.utils.timer import Timer
 from miles.utils.workers.worker_provider.base import BaseWorkerProvider
@@ -255,6 +256,7 @@ class TrajectorySink:
 _phase_sink: PhaseSink | None = None
 _engines_fingerprint: tuple | None = None
 _warner = RateLimitedWarner(logger)
+_no_collector_warner = RateLimitedWarner(logger)
 
 
 def attach_phase_sink(handle, role: str) -> None:
@@ -376,27 +378,43 @@ def report_sandbox_event(
 ) -> None:
     """Record one sandbox lifecycle step for the dashboard's Sandboxes view.
 
-    Meant to be called from agent / custom generate functions running in the
-    rollout manager process; a no-op when the dashboard is disabled there."""
+    Works from agent and custom generate functions in the rollout manager
+    process and from ``subproc`` agent calls, whose events reach the collector
+    through the rollout manager. A no-op when the dashboard is disabled."""
+    try:
+        event = SandboxEvent(
+            ts=time.time(),
+            trial_id=str(trial_id),
+            task=str(task),
+            stage=SandboxStage(stage).value,
+            exception_type=_optional_str(exception_type),
+            provider=_optional_str(provider),
+            sandbox_id=_optional_str(sandbox_id),
+            reward=None if reward is None else float(reward),
+        )
+        if report_to_caller(event):
+            return
+        push_sandbox_events([event])
+    except Exception:
+        _warner.warn("dashboard sandbox event report failed")
+
+
+def push_sandbox_events(events: list[SandboxEvent]) -> None:
+    """Send sandbox events to the collector, e.g. those a ``subproc`` agent call reported."""
     from miles.dashboard import backend
 
     handle = backend.current_collector()
     if handle is None:
+        _no_collector_warner.warn("no dashboard collector in this process; sandbox events are dropped")
         return
     try:
-        event = SandboxEvent(
-            ts=time.time(),
-            trial_id=trial_id,
-            task=task,
-            stage=SandboxStage(stage).value,
-            exception_type=exception_type,
-            provider=provider,
-            sandbox_id=sandbox_id,
-            reward=reward,
-        )
-        handle.push_sandbox_events.remote([event])
+        handle.push_sandbox_events.remote(events)
     except Exception:
         _warner.warn("dashboard sandbox event report failed")
+
+
+def _optional_str(value: object) -> str | None:
+    return None if value is None else str(value)
 
 
 def _alive_engine_cells(servers) -> list:

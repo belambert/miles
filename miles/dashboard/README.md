@@ -74,6 +74,9 @@ lifecycle visible by calling `report_sandbox_event` from the agent / custom
 generate function. The call is fire-and-forget and a no-op when the
 dashboard is disabled. It works with any sandbox backend: `provider` and
 `sandbox_id` are free-form labels, and miles never talks to the provider.
+Under `--custom-agent-function-mode subproc` the events travel back with the
+call's result, so they show up when the call returns, and a call that is
+cancelled or whose process dies reports none.
 
 ```python
 from miles.dashboard.hooks import report_sandbox_event
