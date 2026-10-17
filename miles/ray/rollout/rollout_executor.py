@@ -366,7 +366,9 @@ class RolloutExecutor(DedicatedRpcLoopWorker):
             self._output_snapshotter.save(dir_temp / _EXECUTOR_DIRNAME)
 
     # async but never awaits, for the same reason as save
-    async def load(self, rollout_id: int, completed_rollout_ids: dict[str, int] | None = None, *, load: str | None) -> None:
+    async def load(
+        self, rollout_id: int, completed_rollout_ids: dict[str, int] | None = None, *, load: str | None
+    ) -> None:
         assert not hasattr(  # config-access-exempt: reject checkpoint load paths in immutable rollout config
             self.args, "load"
         ), "Rollout checkpoint load path must be a runtime input"

@@ -29,11 +29,9 @@ class LoraConfig(BaseConfig):
         str,
         Arg(
             choices=["xavier", "kaiming", "normal"],
-            help=(
-                "LoRA A initialization; B is zero-initialized (default: xavier)"
-            )
+            help=("LoRA A initialization; B is zero-initialized (default: xavier)"),
         ),
-    ] = 'xavier'
+    ] = "xavier"
     lora_type: A[
         str,
         Arg(

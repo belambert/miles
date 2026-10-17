@@ -146,9 +146,9 @@ class TrainConfig(BaseConfig):
                 "(except for --loss-type score_centering), so with vocab padding (TP > 1) the two give slightly"
                 " different log-probs, ratios and KL. 'fused' does not support --true-on-policy-mode or "
                 "sampling-support replay (--rollout-top-p below 1 or a positive --rollout-top-k)."
-            )
+            ),
         ),
-    ] = 'torch'
+    ] = "torch"
     log_probs_chunk_size: A[int, Arg(help="Chunk size to compute log probs to save memory")] = -1
     indep_dp: A[
         bool,

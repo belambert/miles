@@ -142,7 +142,7 @@ class DebugConfig(BaseConfig):
                 "Which engine runners the post-update equality check snapshots, resets and compares: 'all' "
                 "(target + draft/MTP), 'target' or 'draft'. Defaults to the runners the weight sync covers, "
                 "which leaves out a speculative draft unless --enable-mtp-training trains it."
-            )
+            ),
         ),
     ] = None
     check_weight_update_skip_list: A[
