@@ -73,7 +73,11 @@ def _prepare(args: ScriptArgs):
         dir_dst=args.ckpt_dir,
         hf_checkpoint=args.hf_checkpoint,
         megatron_path=args.megatron_path,
-        extra_args="--tensor-model-parallel-size 2 --pipeline-model-parallel-size 1",
+        # unsplit experts leave each rank of the full model with half of its 300B weights
+        extra_args=(
+            "--tensor-model-parallel-size 2 --pipeline-model-parallel-size 1 "
+            f"--expert-model-parallel-size {args.num_gpus_per_node} --expert-tensor-parallel-size 1"
+        ),
     )
 
 
