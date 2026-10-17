@@ -269,7 +269,9 @@ def parse_args_and_get_parser(
                 )  # config-access-exempt: model-family schemas differ in optional indexer_rope_interleave metadata
                 logger.info(f"Setting indexer_rope_interleave: {args.indexer_rope_interleave} into args")
                 # one indexer top-k stream per DSA layer; GLM-5.3-Flash's KDA layers have none
-                layer_types = getattr(text_config, "layer_types", None) or []  # config-access-exempt: HF model families may omit layer_types metadata
+                layer_types = (
+                    getattr(text_config, "layer_types", None) or []
+                )  # config-access-exempt: HF model families may omit layer_types metadata
                 args.rollout_indexer_topk_num_streams = text_config.num_hidden_layers - layer_types.count(
                     "linear_attention"
                 )

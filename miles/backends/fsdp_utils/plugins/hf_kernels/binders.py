@@ -60,7 +60,12 @@ def bind_gated_deltanet(model, hub: HubKernels) -> int:
         if not functions:
             continue
         missing = [
-            f"{mod.__name__}.{name}" for mod in modeling_modules for name in name_to_function if not hasattr(mod, name)  # config-access-exempt: the kernel binding table supplies optional third-party module symbol names
+            f"{mod.__name__}.{name}"
+            for mod in modeling_modules
+            for name in name_to_function
+            if not hasattr(
+                mod, name
+            )  # config-access-exempt: the kernel binding table supplies optional third-party module symbol names
         ]
         if missing:
             message = f"slot {slot!r}: no module-level GatedDeltaNet kernel {missing} to rebind"

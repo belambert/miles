@@ -26,7 +26,9 @@ def config_dim(field: str) -> DimFn:
     """A transformer-config field used verbatim (e.g. ``q_lora_rank``)."""
 
     def resolve(_module: nn.Module, context: AttachContext) -> int:
-        value = getattr(context.transformer_config, field)  # config-access-exempt: the architecture layout names the transformer dimension field
+        value = getattr(
+            context.transformer_config, field
+        )  # config-access-exempt: the architecture layout names the transformer dimension field
         assert value, f"transformer config field {field!r} must be a positive dimension, got {value!r}"
         return int(value)
 
@@ -37,7 +39,9 @@ def host_in_local(host_attr: str) -> DimFn:
     """This rank's input width of the host linear ``host_attr``, read from its weight."""
 
     def resolve(module: nn.Module, _context: AttachContext) -> int:
-        return getattr(module, host_attr).weight.shape[1]  # config-access-exempt: the architecture layout names the projection host attribute
+        return getattr(module, host_attr).weight.shape[
+            1
+        ]  # config-access-exempt: the architecture layout names the projection host attribute
 
     return resolve
 
@@ -148,7 +152,9 @@ class ModuleLayout:
 
 
 def layout_applies_to(block: nn.Module, layout: ModuleLayout) -> bool:
-    return layout.present_when_attr is None or hasattr(block, layout.present_when_attr)  # config-access-exempt: the architecture layout names an optional block marker
+    return layout.present_when_attr is None or hasattr(
+        block, layout.present_when_attr
+    )  # config-access-exempt: the architecture layout names an optional block marker
 
 
 def attach_layout(block: nn.Module, layout: ModuleLayout, layer: nn.Module, context: AttachContext) -> int:
@@ -160,7 +166,9 @@ def attach_layout(block: nn.Module, layout: ModuleLayout, layer: nn.Module, cont
 
     count = 0
     for group in layout.fused:
-        host = getattr(block, group.module_attr)  # config-access-exempt: the architecture group names its host module attribute
+        host = getattr(
+            block, group.module_attr
+        )  # config-access-exempt: the architecture group names its host module attribute
         hf_prefix = context.naming.block_prefix(
             layer, host.weight, [projection.hf_leaf for projection in group.projections]
         )
@@ -175,7 +183,9 @@ def attach_layout(block: nn.Module, layout: ModuleLayout, layer: nn.Module, cont
         count += 1
 
     for binding in layout.singles:
-        host = getattr(block, binding.module_attr)  # config-access-exempt: the architecture binding names its host module attribute
+        host = getattr(
+            block, binding.module_attr
+        )  # config-access-exempt: the architecture binding names its host module attribute
         hf_prefix = context.naming.block_prefix(layer, host.weight, [binding.projection.hf_leaf])
         if not context.lora.selects(f"{hf_prefix}{binding.projection.hf_leaf}"):
             continue
