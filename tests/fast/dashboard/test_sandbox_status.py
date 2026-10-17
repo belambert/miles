@@ -1,16 +1,21 @@
 """Sandbox lifecycle events: store round trip, aggregation, endpoint and report hook."""
 
+import asyncio
+import uuid
 from pathlib import Path
 
+import numpy as np
 import pytest
 from fastapi.testclient import TestClient
 
 from miles.dashboard import backend, hooks
 from miles.dashboard.collector import CollectorConfig, DashboardCollector
 from miles.dashboard.dump_reader import DumpReader
-from miles.dashboard.sandbox_status import sandbox_status
+from miles.dashboard.sandbox_status import MAX_FAILURE_BUCKETS, sandbox_status
 from miles.dashboard.server import make_app
 from miles.dashboard.store import MetricStore, SandboxEvent, SandboxStage, Stream
+from miles.rollout.agentic.agent_function import call_agent_function
+from miles.utils.test_utils import sandbox_event_stubs
 
 
 def _event(ts: float, trial_id: str, stage: SandboxStage, exception_type: str | None = None) -> SandboxEvent:
@@ -54,6 +59,20 @@ def test_only_silent_non_terminal_trials_are_stale():
     assert status["stale"][0]["silent_s"] == 195.0
 
 
+def test_a_stale_row_keeps_the_labels_of_the_trials_earlier_events():
+    created = SandboxEvent(ts=0.0, trial_id="a", task="t", stage="created", provider="modal", sandbox_id="sb-1")
+    started = SandboxEvent(ts=5.0, trial_id="a", task="", stage="agent_started")
+    [row] = sandbox_status([created, started], now=100.0, stale_after_s=60.0, bucket_s=60.0)["stale"]
+    assert (row["stage"], row["task"], row["provider"], row["sandbox_id"]) == ("agent_started", "t", "modal", "sb-1")
+
+
+def test_a_tiny_bucket_is_widened_to_bound_the_bucket_count():
+    status = sandbox_status(EVENTS, now=200.0, stale_after_s=600.0, bucket_s=1e-6)
+    for series in status["failure_series"]:
+        assert len(series["value"]) <= MAX_FAILURE_BUCKETS + 1
+    assert sum(sum(series["value"]) for series in status["failure_series"]) == 3
+
+
 @pytest.fixture
 def dump_dir(tmp_path: Path) -> Path:
     store = MetricStore(tmp_path / "dashboard")
@@ -69,7 +88,9 @@ def test_static_endpoint_judges_staleness_at_the_last_recorded_event(dump_dir: P
     status = client.get("/api/sandboxes", params=dict(stale_after_s=60)).json()
     assert status["now"] == 200.0
     assert [row["trial_id"] for row in status["stale"]] == ["a"]
-    assert client.get("/api/sandboxes", params=dict(bucket_s=0)).status_code == 400
+    for bad in (0, "inf", "nan"):
+        assert client.get("/api/sandboxes", params=dict(bucket_s=bad)).status_code == 400
+    assert client.get("/api/sandboxes", params=dict(stale_after_s="inf")).status_code == 400
 
 
 def test_follow_endpoint_judges_staleness_at_wall_clock(dump_dir: Path):
@@ -110,3 +131,37 @@ def test_collector_writes_pushed_events_to_disk(tmp_path: Path):
     collector.push_sandbox_events(EVENTS[:3])
     collector.flush()
     assert MetricStore.load(tmp_path).records[Stream.SANDBOX_EVENTS] == EVENTS[:3]
+
+
+def test_report_converts_caller_values_to_json_safe_types(monkeypatch):
+    handle = _FakeHandle()
+    monkeypatch.setattr(backend, "_handle", handle)
+    trial_id = uuid.uuid4()
+    hooks.report_sandbox_event(trial_id, SandboxStage.VERIFIER_DONE, task=Path("t"), reward=np.float32(1.0))
+    [([event],)] = handle.push_sandbox_events.calls
+    assert (event.trial_id, event.task, event.reward) == (str(trial_id), "t", 1.0)
+    assert type(event.reward) is float
+
+
+def test_flush_drops_a_record_it_cannot_encode_and_keeps_the_rest(tmp_path: Path):
+    collector = DashboardCollector(config=CollectorConfig(dashboard_dir=str(tmp_path), run_name="r", start_ts=0.0))
+    bad = SandboxEvent(ts=9.0, trial_id="x", task="t", stage="created", reward=np.float32(1.0))
+    collector.push_sandbox_events([EVENTS[0], bad, EVENTS[1]])
+    collector.flush()
+    assert MetricStore.load(tmp_path).records[Stream.SANDBOX_EVENTS] == EVENTS[:2]
+
+
+def test_subproc_agent_events_reach_the_callers_collector(monkeypatch):
+    handle = _FakeHandle()
+    monkeypatch.setattr(backend, "_handle", handle)
+    result = asyncio.run(
+        call_agent_function(
+            sandbox_event_stubs.report_sandbox_events,
+            mode="subproc",
+            on_child_reports=hooks.push_sandbox_events,
+            trial_id="a",
+        )
+    )
+    assert result == "reported"
+    [(events,)] = handle.push_sandbox_events.calls
+    assert [(event.trial_id, event.stage) for event in events] == [("a", "created"), ("a", "torn_down")]
