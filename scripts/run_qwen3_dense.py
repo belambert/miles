@@ -15,7 +15,8 @@ submits the training job.
 
 Args:
   --model-name: Model variant, see the keys of _RECIPES below.
-  --num-gpus-per-node: GPUs per node (default: 8). Set it when running on a slice of a node.
+  --num-gpus-per-node: GPUs per node (default: 8). Set it when running on a slice of a node;
+      TP and the SGLang engine size are capped at it, and a single GPU offloads Adam to host RAM.
   --cuda-visible-devices: Restrict the launcher and its ray workers to these GPUs.
   --num-rollout: Override the variant's default rollout count.
   --enable-eval: Run AIME evaluation every 20 steps (default: on).
@@ -30,6 +31,11 @@ Four-GPU slice of an eight-GPU node:
 
   python scripts/run_qwen3_dense.py --model-name Qwen3-4B \\
       --num-gpus-per-node 4 --cuda-visible-devices 4,5,6,7
+
+One or two GPUs (e.g. an A100 80GB workstation):
+
+  python scripts/run_qwen3_dense.py --model-name Qwen3-4B --num-gpus-per-node 1
+  python scripts/run_qwen3_dense.py --model-name Qwen3-4B --num-gpus-per-node 2
 """
 
 import os
@@ -106,6 +112,19 @@ class ScriptArgs(command_utils.ExecuteTrainConfig):
     def recipe(self) -> _Recipe:
         return _RECIPES[self.model_name]
 
+    @property
+    def tensor_model_parallel_size(self) -> int:
+        return min(self.recipe.tensor_model_parallel_size, self.num_gpus_per_node)
+
+    @property
+    def rollout_num_gpus_per_engine(self) -> int:
+        return min(self.recipe.rollout_num_gpus_per_engine, self.num_gpus_per_node)
+
+    @property
+    def optimizer_cpu_offload(self) -> bool:
+        # an unsharded 4B Adam state alone nearly fills an 80GB GPU
+        return self.recipe.optimizer_cpu_offload or self.num_gpus_per_node == 1
+
 
 def execute(args: ScriptArgs):
     U = args.create_backend()
@@ -148,8 +167,8 @@ def execute(args: ScriptArgs):
         )
 
     perf_args = (
-        f"--tensor-model-parallel-size {args.recipe.tensor_model_parallel_size} "
-        "--sequence-parallel "
+        f"--tensor-model-parallel-size {args.tensor_model_parallel_size} "
+        f"{'--sequence-parallel ' if args.tensor_model_parallel_size > 1 else ''}"
         "--pipeline-model-parallel-size 1 "
         "--context-parallel-size 1 "
         "--expert-model-parallel-size 1 "
@@ -179,13 +198,13 @@ def execute(args: ScriptArgs):
         "--adam-beta1 0.9 "
         "--adam-beta2 0.98 "
     )
-    if args.recipe.optimizer_cpu_offload:
+    if args.optimizer_cpu_offload:
         optimizer_args += (
             "--optimizer-cpu-offload " "--overlap-cpu-optimizer-d2h-h2d " "--use-precision-aware-optimizer "
         )
 
     sglang_args = (
-        f"--rollout-num-gpus-per-engine {args.recipe.rollout_num_gpus_per_engine} "
+        f"--rollout-num-gpus-per-engine {args.rollout_num_gpus_per_engine} "
         f"--sglang-mem-fraction-static {args.recipe.sglang_mem_fraction_static} "
         f"{args.recipe.extra_sglang_args}"
     )
