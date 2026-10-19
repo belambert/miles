@@ -151,6 +151,7 @@ class TrainRow:
     log_probs: torch.Tensor | None  # absent when the run does not dump them
     rollout_log_probs: torch.Tensor | None
     ref_log_probs: torch.Tensor | None
+    post_log_probs: torch.Tensor | None  # after the step's update, with --save-post-update-log-probs
     entropy: torch.Tensor | None
     ref_entropy: torch.Tensor | None
     advantages: torch.Tensor | None
@@ -178,6 +179,7 @@ class TrainRow:
             log_probs=optional("log_probs"),
             rollout_log_probs=optional("rollout_log_probs"),
             ref_log_probs=optional("ref_log_probs"),
+            post_log_probs=optional("post_log_probs"),
             entropy=optional("entropy"),
             ref_entropy=optional("ref_entropy"),
             advantages=optional("advantages"),
@@ -193,6 +195,7 @@ _CP_SHARDED_FIELDS = (
     "log_probs",
     "rollout_log_probs",
     "ref_log_probs",
+    "post_log_probs",
     "entropy",
     "ref_entropy",
     "advantages",
@@ -400,6 +403,8 @@ class DumpReader:
         "mean_abs_lp_diff",
         "max_abs_lp_diff",
         "mean_imp_ratio",
+        "mean_ref_drift",
+        "mean_step_diff",
         "adv_mean",
         "adv_std",
         "return_mean",
@@ -784,6 +789,9 @@ class DumpReader:
             ref_log_probs=None if row is None else response_slice(row.ref_log_probs),
             lp_diff=response_slice(lp_diff),
             imp_ratio=None if lp_diff is None else response_slice(lp_diff.exp()),
+            # how far training has moved each token from the reference model, and what this step's update did
+            ref_drift=None if row is None else response_slice(_diff(row.log_probs, row.ref_log_probs)),
+            step_diff=None if row is None else response_slice(_diff(row.post_log_probs, row.log_probs)),
             entropy=None if row is None else response_slice(row.entropy),
             ref_entropy=None if row is None else response_slice(row.ref_entropy),
             advantages=None if row is None else response_slice(row.advantages),
@@ -845,6 +853,8 @@ class DumpReader:
                 mean_abs_lp_diff=None,
                 max_abs_lp_diff=None,
                 mean_imp_ratio=None,
+                mean_ref_drift=None,
+                mean_step_diff=None,
                 adv_mean=None,
                 adv_std=None,
                 return_mean=None,
@@ -869,6 +879,8 @@ class DumpReader:
             mean_abs_lp_diff=_mean(abs_diff),
             max_abs_lp_diff=_max(abs_diff),
             mean_imp_ratio=_mean(_masked(None if lp_diff is None else lp_diff.exp(), mask)),
+            mean_ref_drift=_mean(_masked(_diff(row.log_probs, row.ref_log_probs), mask)),
+            mean_step_diff=_mean(_masked(_diff(row.post_log_probs, row.log_probs), mask)),
             adv_mean=_mean(advantages),
             adv_std=_std(advantages),
             return_mean=_mean(_masked(row.returns, mask)),
@@ -905,6 +917,10 @@ def _masked(values: torch.Tensor | None, mask: torch.Tensor) -> torch.Tensor | N
         return None
     selected = values[mask]
     return selected.float() if selected.numel() else None
+
+
+def _diff(a: torch.Tensor | None, b: torch.Tensor | None) -> torch.Tensor | None:
+    return None if a is None or b is None else a - b
 
 
 def _mean(values: torch.Tensor | None) -> float | None:

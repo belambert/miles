@@ -19,6 +19,8 @@ const DEFAULT_COLUMNS = [
   "tool_calls",
   "mean_abs_lp_diff",
   "mean_imp_ratio",
+  "mean_ref_drift",
+  "mean_step_diff",
   "mean_entropy",
   "adv_mean",
   "non_generation_time",
