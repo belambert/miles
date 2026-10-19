@@ -75,7 +75,7 @@ The Qwen3-4B-Instruct-2507 config (`scripts/models/qwen3-4B-Instruct-2507.py`) j
 | `Qwen3-4B` | 2 | 1 | 1 | 1 | 9216 | 8 (1 × 8) |
 | `Qwen3-32B` | 8 | 1 | 1 | 1 | 20480 | 8 (1 × 8) |
 
-`Qwen3-4B` also runs on a 4-GPU slice with `--num-gpus-per-node 4`; the parallelism is unchanged.
+`Qwen3-4B` also runs on a 4-GPU slice with `--num-gpus-per-node 4`; the parallelism is unchanged. It runs on one or two GPUs (e.g. A100 80GB) too: TP and `--rollout-num-gpus-per-engine` are capped at `--num-gpus-per-node`, and with a single GPU Adam is offloaded to host RAM (see 5.4).
 
 `--sequence-parallel` is on whenever TP > 1.
 
@@ -114,7 +114,7 @@ Rollout uses `--rm-type deepscaler` against `dapo-math-17k`. The SFT recipe (`py
 --use-precision-aware-optimizer
 ```
 
-The 4 B / 8 B / 14 B recipes leave Adam on GPU.
+The 4 B / 8 B / 14 B recipes leave Adam on GPU, except with `--num-gpus-per-node 1`, which enables CPU Adam for every variant.
 
 ### 5.5 Notable quirks
 
