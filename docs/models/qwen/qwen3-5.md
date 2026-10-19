@@ -17,6 +17,8 @@ description: Launch recipes for Qwen3.5-4B / 9B / 27B with attention-output-gate
 
 | Model | HF ID |
 |---|---|
+| Qwen3.5-0.8B | [Qwen/Qwen3.5-0.8B](https://huggingface.co/Qwen/Qwen3.5-0.8B) |
+| Qwen3.5-2B | [Qwen/Qwen3.5-2B](https://huggingface.co/Qwen/Qwen3.5-2B) |
 | Qwen3.5-4B | [Qwen/Qwen3.5-4B](https://huggingface.co/Qwen/Qwen3.5-4B) |
 | Qwen3.5-9B | [Qwen/Qwen3.5-9B](https://huggingface.co/Qwen/Qwen3.5-9B) |
 | Qwen3.5-27B | [Qwen/Qwen3.5-27B](https://huggingface.co/Qwen/Qwen3.5-27B) |
@@ -61,6 +63,8 @@ The three sizes are one launcher, `scripts/run_qwen3_dense.py`, selected by `--m
 
 | `--model-name` | TP | PP | CP | `max_tokens_per_gpu` | SGLang `mem-fraction-static` | CPU Adam | GPUs |
 |---|---|---|---|---|---|---|---|
+| `Qwen3.5-0.8B` | 1 | 1 | 1 | 9216 | 0.5 | – | 1 (`--num-gpus-per-node 1`) |
+| `Qwen3.5-2B` | 1 | 1 | 1 | 9216 | 0.5 | – | 1 (`--num-gpus-per-node 1`) |
 | `Qwen3.5-4B` | 2 | 1 | 1 | 9216 | 0.7 | – | 8 (1 × 8) |
 | `Qwen3.5-9B` | 2 | 1 | 1 | 9216 | 0.6 | – | 8 (1 × 8) |
 | `Qwen3.5-27B` | 4 | 1 | 1 | 8192 | 0.5 | ✓ | 8 (1 × 8) |

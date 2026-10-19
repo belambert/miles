@@ -21,6 +21,8 @@ Args:
   --enable-eval: Run AIME evaluation every 20 steps (default: on).
   --save: Write checkpoints to --output-dir (default: on).
   --model-dir / --data-dir: Checkpoint / dataset directories.
+  --attention-backend: Megatron attention backend (default: flash).
+  --dump-details: Save every rollout's samples and training data under --output-dir/dump_details.
 
 =====================
 
@@ -30,6 +32,10 @@ Four-GPU slice of an eight-GPU node:
 
   python scripts/run_qwen3_dense.py --model-name Qwen3-4B \\
       --num-gpus-per-node 4 --cuda-visible-devices 4,5,6,7
+
+Single GPU:
+
+  python scripts/run_qwen3_dense.py --model-name Qwen3-0.6B --num-gpus-per-node 1
 """
 
 import os
@@ -41,8 +47,12 @@ import typer
 from miles.utils.external_utils import command_utils
 
 _MODEL_NAMES = Literal[
+    "Qwen3-0.6B",
+    "Qwen3-1.7B",
     "Qwen3-4B",
     "Qwen3-32B",
+    "Qwen3.5-0.8B",
+    "Qwen3.5-2B",
     "Qwen3.5-4B",
     "Qwen3.5-9B",
     "Qwen3.5-27B",
@@ -69,6 +79,9 @@ class _Recipe:
 _QWEN3_32B_CUDA_GRAPH_BS = " ".join(str(bs) for bs in [1, 2, 4, 8, *range(16, 257, 8)])
 
 _RECIPES: dict[str, _Recipe] = {
+    # sized for a single GPU, e.g. a DGX Spark with --num-gpus-per-node 1
+    "Qwen3-0.6B": _Recipe("qwen3-0.6B", 1, 9216, 1, 0.5, False),
+    "Qwen3-1.7B": _Recipe("qwen3-1.7B", 1, 9216, 1, 0.5, False),
     "Qwen3-4B": _Recipe("qwen3-4B", 2, 9216, 2, 0.7, False, use_dashboard=True),
     "Qwen3-32B": _Recipe(
         "qwen3-32B",
@@ -80,6 +93,9 @@ _RECIPES: dict[str, _Recipe] = {
         num_rollout=5,
         extra_sglang_args=f"--sglang-cuda-graph-bs-decode {_QWEN3_32B_CUDA_GRAPH_BS} ",
     ),
+    # single GPU, like Qwen3-0.6B
+    "Qwen3.5-0.8B": _Recipe("qwen3.5-0.8B", 1, 9216, 1, 0.5, False),
+    "Qwen3.5-2B": _Recipe("qwen3.5-2B", 1, 9216, 1, 0.5, False),
     "Qwen3.5-4B": _Recipe("qwen3.5-4B", 2, 9216, 1, 0.7, False),
     "Qwen3.5-9B": _Recipe("qwen3.5-9B", 2, 9216, 1, 0.6, False),
     "Qwen3.5-27B": _Recipe("qwen3.5-27B", 4, 8192, 1, 0.5, True),
@@ -101,6 +117,8 @@ class ScriptArgs(command_utils.ExecuteTrainConfig):
     data_dir: str = "/root/datasets"
     model_dir: str = "/root/models"
     megatron_path: str = "/root/Megatron-LM"
+    attention_backend: str = "flash"
+    dump_details: bool = False
 
     @property
     def recipe(self) -> _Recipe:
@@ -197,7 +215,7 @@ def execute(args: ScriptArgs):
         # should be good for model performance
         "--accumulate-allreduce-grads-in-fp32 "
         "--attention-softmax-in-fp32 "
-        "--attention-backend flash "
+        f"--attention-backend {args.attention_backend} "
         "--colocate "
         f"--actor-num-nodes {args.num_nodes} "
         f"--actor-num-gpus-per-node {args.num_gpus_per_node} "
@@ -205,6 +223,8 @@ def execute(args: ScriptArgs):
     )
     if args.recipe.use_dashboard:
         misc_args += "--use-miles-dashboard " f"--dump-details {args.output_dir}/dump_details "
+    elif args.dump_details:
+        misc_args += f"--dump-details {args.output_dir}/dump_details "
 
     train_args = (
         f"{ckpt_args} "
