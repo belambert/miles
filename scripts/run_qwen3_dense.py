@@ -17,7 +17,7 @@ Args:
   --model-name: Model variant, see the keys of _RECIPES below.
   --num-gpus-per-node: GPUs per node (default: 8). Set it when running on a slice of a node.
   --cuda-visible-devices: Restrict the launcher and its ray workers to these GPUs.
-  --num-rollout: Override the variant's default rollout count.
+  --num-rollout: Override the variant's default rollout count; 0 only evaluates.
   --enable-eval: Run AIME evaluation every 20 steps (default: on).
   --save: Write checkpoints to --output-dir (default: on).
   --model-dir / --data-dir: Checkpoint / dataset directories.
@@ -112,7 +112,7 @@ class ScriptArgs(command_utils.ExecuteTrainConfig):
     cuda_visible_devices: str = ""
     enable_eval: bool = True
     save: bool = True
-    num_rollout: int = 0
+    num_rollout: int | None = None
     extra_args: str = ""
     data_dir: str = "/root/datasets"
     model_dir: str = "/root/models"
@@ -146,7 +146,7 @@ def execute(args: ScriptArgs):
         "--apply-chat-template "
         "--rollout-shuffle "
         "--rm-type deepscaler "
-        f"--num-rollout {args.num_rollout or args.recipe.num_rollout} "
+        f"--num-rollout {args.recipe.num_rollout if args.num_rollout is None else args.num_rollout} "
         "--rollout-batch-size 32 "
         "--n-samples-per-prompt 8 "
         "--rollout-max-response-len 8192 "
