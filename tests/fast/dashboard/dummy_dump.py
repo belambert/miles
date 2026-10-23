@@ -235,6 +235,7 @@ def _apply_dummy_actor_columns(shard: dict, generator: torch.Generator, *, with_
     shard["rollout_log_probs"] = [torch.tensor(p) for p in shard["rollout_log_probs"]]
     shard["log_probs"] = per_token(sign=-1.0)
     shard["ref_log_probs"] = per_token(sign=-1.0)
+    shard["post_log_probs"] = per_token(sign=-1.0)
     shard["advantages"] = per_token()
     shard["returns"] = per_token()
     if with_entropy:

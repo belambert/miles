@@ -126,6 +126,21 @@ def test_tokens_full_range(reader):
     assert payload["lp_diff"][0] == pytest.approx(float(row.log_probs[0] - row.rollout_log_probs[0]))
 
 
+def test_tokens_and_summary_carry_ref_drift_and_step_diff(reader):
+    joined = reader.load_joined(0)
+    sample = joined.samples[0]
+    row = joined.train_rows[(sample.index, 0)]
+    payload = reader.tokens(0, sample.index)
+
+    assert payload["ref_drift"] == pytest.approx([float(v) for v in row.log_probs - row.ref_log_probs])
+    assert payload["step_diff"] == pytest.approx([float(v) for v in row.post_log_probs - row.log_probs])
+
+    mask = row.loss_mask > 0
+    entry = _df_row(reader.summary(0), sample.index)
+    assert entry["mean_ref_drift"] == pytest.approx(float((row.log_probs - row.ref_log_probs)[mask].mean()), rel=1e-5)
+    assert entry["mean_step_diff"] == pytest.approx(float((row.post_log_probs - row.log_probs)[mask].mean()), rel=1e-5)
+
+
 def test_tokens_null_the_stats_where_the_loss_is_masked(reader):
     """mask=0 positions hold placeholders the engine never scored: they serialize
     as null, never as numbers a chart would mistake for data."""

@@ -2211,6 +2211,17 @@ def get_miles_extra_args_provider(add_custom_arguments=None):
                 ),
             )
             parser.add_argument(
+                "--save-post-update-log-probs",
+                action="store_true",
+                default=False,
+                help=(
+                    "After each training step, recompute the log-probs of the step's tokens with the updated "
+                    "weights and save them in the train data as `post_log_probs`, next to `log_probs` from "
+                    "before the update. Costs one extra forward pass per rollout; needs "
+                    "--save-debug-train-data or --dump-details."
+                ),
+            )
+            parser.add_argument(
                 "--save-debug-event-data",
                 type=str,
                 default=None,
@@ -3716,6 +3727,10 @@ def miles_validate_args(args):
         args.save_debug_train_data = f"{args.dump_details}/train_data/{{rollout_id}}_{{rank}}.pt"
         args.save_debug_trajectory_data = f"{args.dump_details}/trajectory/{{rollout_id}}.jsonl"
         args.save_debug_event_data = f"{args.dump_details}/{EVENTS_DIRNAME}"
+
+    assert (
+        not args.save_post_update_log_probs or args.save_debug_train_data is not None
+    ), "--save-post-update-log-probs saves into the train data dump; add --save-debug-train-data or --dump-details"
 
     if args.save_debug_event_data is None and args.save is not None:
         args.save_debug_event_data = f"{args.save}/{EVENTS_DIRNAME}"

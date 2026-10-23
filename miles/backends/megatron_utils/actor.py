@@ -780,6 +780,18 @@ class MegatronTrainRayActor(TrainRayActor):
                     ft_test_action_executor=self._ft_test_action_executor,
                 )
 
+            # the same tokens scored again after the update, to compare with log_probs from before it
+            if self.args.save_post_update_log_probs:
+                self._set_replay_stage("fallthrough")
+                rollout_data.update(
+                    self._compute_log_prob(
+                        data_iterator,
+                        num_microbatches,
+                        rollout_id=rollout_id,
+                        store_prefix="post_",
+                    )
+                )
+
             self.prof.step(rollout_id=rollout_id)
 
         train_dump.save_debug_train_data(self.args, rollout_id=rollout_id, rollout_data=rollout_data)

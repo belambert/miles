@@ -72,6 +72,8 @@ The Qwen3-4B-Instruct-2507 config (`scripts/models/qwen3-4B-Instruct-2507.py`) j
 
 | `--model-name` | TP | PP | CP | EP | `max_tokens_per_gpu` | GPUs |
 |---|---|---|---|---|---|---|
+| `Qwen3-0.6B` | 1 | 1 | 1 | 1 | 9216 | 1 (`--num-gpus-per-node 1`) |
+| `Qwen3-1.7B` | 1 | 1 | 1 | 1 | 9216 | 1 (`--num-gpus-per-node 1`) |
 | `Qwen3-4B` | 2 | 1 | 1 | 1 | 9216 | 8 (1 × 8) |
 | `Qwen3-32B` | 8 | 1 | 1 | 1 | 20480 | 8 (1 × 8) |
 
